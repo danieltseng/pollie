@@ -10,6 +10,17 @@ Everyone installs it on their own Mac and uses their own Claude / ChatGPT accoun
 
 ---
 
+## Quick install with your agent
+
+Already use Claude Code or Codex? Paste this to it in Terminal:
+
+```
+Install Pollie for me by following https://github.com/danieltseng/pollie/blob/main/INSTALL-WITH-AGENT.md
+```
+
+It checks your setup, downloads Pollie, installs the bridge, and then tells you the two steps only you can do in
+Figma (import the plugin, click Allow). Prefer doing it by hand? Follow the steps below.
+
 ## Install (first time, about 5 minutes)
 
 ### You need
