@@ -23,8 +23,12 @@ Don't edit any files in the repo, don't ask for or handle passwords, and don't u
 - Verify: `curl -s -H "Host: localhost:3055" http://127.0.0.1:3055/health` must print `{"ok": true}` (the first request starts the bridge; retry once after 2 seconds if needed).
 - If it fails, show the last lines of `~/Library/Logs/figma-agent.log` to the user.
 
-## 4. Hand over to the user (you can't do these)
+## 4. Make the Figma step quick
+Run `open -R ~/pollie/plugin/manifest.json` (shows the file in Finder) and
+`printf '%s' "$HOME/pollie/plugin/manifest.json" | pbcopy` (puts its path on the clipboard).
+
+## 5. Hand over to the user (you can't do these)
 Tell the user, in their language, exactly this:
-1. In **Figma Desktop** (not the browser): menu **Plugins › Development › Import plugin from manifest…** and choose `~/pollie/plugin/manifest.json`.
+1. In **Figma Desktop** (not the browser): menu **Plugins › Development › Import plugin from manifest…**. In the file dialog press **⌘⇧G**, then **⌘V** (the path is already copied) and **Enter**, then **Open**.
 2. Open any design file → **Plugins › Development › Pollie** → click **Connect**. A macOS dialog asks to allow the connection: click **Allow** (only if they just clicked Connect).
 3. To update later: ask the agent again, or run `cd ~/pollie && git pull && ./install-autostart.sh` and reopen the plugin.

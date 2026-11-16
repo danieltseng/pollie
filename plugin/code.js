@@ -237,11 +237,35 @@ function toPlain(v, d) {
 
 // ---------------------------------------------------------------- design system index
 
-var dsCache = null;
+var dsCache = null, dsBuilding = null, dsPartial = null;
+function yieldToFigma() { return new Promise(function (r) { setTimeout(r, 0); }); }
 
+// Full index (awaited when the agent explicitly asks for the design system).
 async function designSystem(force) {
   if (dsCache && !force) return dsCache;
+  if (dsBuilding && !force) return dsBuilding;
+  dsBuilding = buildDesignSystem().then(function (ds) { dsCache = ds; dsBuilding = null; return ds; },
+                                        function (e) { dsBuilding = null; throw e; });
+  return dsBuilding;
+}
+// What's indexed so far, without waiting: big files (100+ pages) are indexed page by page in the background,
+// so the first message doesn't wait for the whole file.
+async function designSystemNow() {
+  if (dsCache) return dsCache;
+  if (!dsBuilding) designSystem(false).catch(function () {});
+  if (dsPartial) {
+    var snap = {};
+    for (var k in dsPartial) snap[k] = dsPartial[k];
+    snap.indexing = "still indexing components (" + (dsPartial.pagesIndexed || 0) + "/" + (dsPartial.pageCount || "?") +
+      " pages); call figma_design_system for the complete list";
+    return snap;
+  }
+  return { file: figma.root.name, editor: figma.editorType, indexing: "starting; call figma_design_system for the complete list" };
+}
+
+async function buildDesignSystem() {
   var ds = { file: figma.root.name, editor: figma.editorType };
+  dsPartial = ds;
 
   // Variables
   try {
@@ -283,12 +307,19 @@ async function designSystem(force) {
     ds.stylesError = String(e);
   }
 
-  // Local components
+  // Local components — one page at a time, yielding in between so the plugin never freezes on big files
   try {
-    await figma.loadAllPagesAsync();
-    var comps = figma.root.findAllWithCriteria({ types: ["COMPONENT_SET", "COMPONENT"] });
     ds.components = [];
-    for (var j = 0; j < comps.length && ds.components.length < 400; j++) {
+    var pages = figma.root.children.slice();
+    var cur = pages.indexOf(figma.currentPage);
+    if (cur > 0) { pages.splice(cur, 1); pages.unshift(figma.currentPage); }  // current page first
+    ds.pageCount = pages.length; ds.pagesIndexed = 0;
+    var comps = [];
+    for (var pi = 0; pi < pages.length && ds.components.length < 400; pi++) {
+      try { await pages[pi].loadAsync(); } catch (e) {}
+      comps = pages[pi].findAllWithCriteria({ types: ["COMPONENT_SET", "COMPONENT"] });
+      ds.pagesIndexed = pi + 1;
+      for (var j = 0; j < comps.length && ds.components.length < 400; j++) {
       var c = comps[j];
       if (c.type === "COMPONENT" && c.parent && c.parent.type === "COMPONENT_SET") continue;
       var entry = { id: c.id, name: c.name, key: c.key, type: c.type };
@@ -304,6 +335,8 @@ async function designSystem(force) {
       }
       if (c.description) entry.desc = c.description.slice(0, 120);
       ds.components.push(entry);
+      }
+      await yieldToFigma();
     }
   } catch (e) {
     ds.componentsError = String(e);
@@ -314,7 +347,8 @@ async function designSystem(force) {
     var seen = {};
     ds.libraryComponents = [];
     var inst = figma.currentPage.findAllWithCriteria({ types: ["INSTANCE"] });
-    for (var n = 0; n < inst.length && n < 1500; n++) {
+    for (var n = 0; n < inst.length && n < 400; n++) {
+      if (n % 50 === 49) await yieldToFigma();
       var m = await inst[n].getMainComponentAsync();
       if (!m || !m.remote) continue;
       var setNode = m.parent && m.parent.type === "COMPONENT_SET" ? m.parent : null;
@@ -341,7 +375,7 @@ async function designSystem(force) {
     });
   } catch (e) {}
 
-  dsCache = ds;
+  delete ds.pagesIndexed; delete ds.pageCount;
   return ds;
 }
 
@@ -701,14 +735,20 @@ var h = (function () {
   // ------------------------------------------------ components
   async function componentIndex() {
     if (cache.comps) return cache.comps;
-    await figma.loadAllPagesAsync();
-    var local = figma.root.findAllWithCriteria({ types: ["COMPONENT_SET", "COMPONENT"] }).filter(function (c) {
-      return !(c.type === "COMPONENT" && c.parent && c.parent.type === "COMPONENT_SET");
-    });
+    var local = [];
+    var pgs = figma.root.children;
+    for (var p = 0; p < pgs.length; p++) {  // page by page so big files don't freeze Figma
+      try { await pgs[p].loadAsync(); } catch (e) {}
+      local = local.concat(pgs[p].findAllWithCriteria({ types: ["COMPONENT_SET", "COMPONENT"] }).filter(function (c) {
+        return !(c.type === "COMPONENT" && c.parent && c.parent.type === "COMPONENT_SET");
+      }));
+      await yieldToFigma();
+    }
     // library components already used in this file
     var seen = {}, remote = [];
     var inst = figma.currentPage.findAllWithCriteria({ types: ["INSTANCE"] });
-    for (var i = 0; i < inst.length && i < 1500; i++) {
+    for (var i = 0; i < inst.length && i < 400; i++) {
+      if (i % 50 === 49) await yieldToFigma();
       var m = await inst[i].getMainComponentAsync();
       if (!m || !m.remote) continue;
       var top = m.parent && m.parent.type === "COMPONENT_SET" ? m.parent : m;
@@ -1110,7 +1150,7 @@ figma.ui.onmessage = async function (msg) {
     try {
       ctx = await selectionContext();
       if (msg.withDesignSystem) {
-        try { ctx.designSystem = await designSystem(false); } catch (e) { ctx.designSystemError = String(e && e.message || e); }
+        try { ctx.designSystem = await designSystemNow(); } catch (e) { ctx.designSystemError = String(e && e.message || e); }
       }
     } catch (e) {  // never leave the panel waiting: send what we can
       ctx = { file: figma.root.name, fileKey: fileKey(), page: { id: figma.currentPage.id, name: figma.currentPage.name },
