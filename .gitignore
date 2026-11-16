@@ -1,0 +1,13 @@
+.DS_Store
+__pycache__/
+*.pyc
+# runtime data (chat history, local config, caches)
+bridge/.workdir/
+bridge/conversations/
+bridge/config.json
+bridge/file_keys.json
+bridge/paired.json
+*.tmp
+bridge/memory.json
+bridge/my-skills/
+bridge/my-skills.json

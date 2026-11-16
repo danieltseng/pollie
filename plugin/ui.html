@@ -1,0 +1,2110 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  :root {
+    --bg: #f6f6f6;
+    --surface: #ffffff;
+    --bubble: #e9e9eb;
+    --fg: #1d1d1f;
+    --fg2: #6e6e73;
+    --fg3: #a1a1a6;
+    --line: rgba(0,0,0,.06);
+    --btn: #1d1d1f;
+    --onbtn: #ffffff;
+    --danger: #d93025;
+    --shadow: 0 2px 12px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.04);
+  }
+  html.figma-dark {
+    --bg: #1e1e1e;
+    --surface: #2c2c2c;
+    --bubble: #383838;
+    --fg: #f2f2f2;
+    --fg2: #a8a8a8;
+    --fg3: #707070;
+    --line: rgba(255,255,255,.08);
+    --btn: #f2f2f2;
+    --onbtn: #1e1e1e;
+    --danger: #ff6b5e;
+    --shadow: 0 2px 12px rgba(0,0,0,.4), 0 0 0 1px rgba(255,255,255,.06);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font: 13px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "PingFang TC", sans-serif;
+    color: var(--fg); background: var(--bg);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; }
+
+  /* ---------- header */
+  /* header floats over the transcript; messages scrolling up fade out under it */
+  header {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 5;
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 10px 28px 10px;
+    background: linear-gradient(to bottom, var(--bg) 0%, var(--bg) 50%, transparent 100%);
+    pointer-events: none;
+  }
+  header > * { pointer-events: auto; }
+  body { position: relative; }
+  #title {
+    flex: 1; font-weight: 600; font-size: 13px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--fg3); flex: none; }
+  header .dot { display: none; }
+  header .dot.off { display: block; background: #ff3b30; }  /* only shown when the bridge can't be reached */
+  .icon-btn {
+    width: 30px; height: 30px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: var(--surface); box-shadow: var(--shadow); color: var(--fg);
+  }
+  .icon-btn:hover { filter: brightness(.97); }
+
+  /* ---------- menu (⋯) */
+  .menu {
+    position: absolute; z-index: 10; min-width: 200px;
+    background: var(--surface); box-shadow: var(--shadow); border-radius: 12px;
+    padding: 6px; display: none;
+  }
+  .menu.open { display: block; }
+  #settings { top: 44px; right: 10px; }
+  #actions { bottom: 64px; left: 12px; }
+  #modelMenu { bottom: 64px; right: 12px; }
+  #commentsMenu { left: 12px; right: 12px; max-height: 60vh; overflow-y: auto; padding: 4px; }
+  #commentsMenu .chead { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; color: var(--fg2); font-size: 12px; }
+  #commentsMenu .call { font-size: 12px; color: var(--fg); background: var(--bg); border-radius: 8px; padding: 3px 8px; }
+  #commentsMenu .citem { display: block; width: 100%; text-align: left; padding: 8px; border-radius: 8px; }
+  #commentsMenu .citem:hover { background: var(--bg); }
+  #commentsMenu .cmeta { font-size: 11px; color: var(--fg3); }
+  #commentsMenu .cmsg { font-size: 12.5px; color: var(--fg); margin: 2px 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  #settings { min-width: 140px; }
+  #modelBtn {
+    flex: none; height: 32px; padding: 0 6px 0 8px; border-radius: 16px;
+    color: var(--fg2); font-size: 12px; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;
+  }
+  #modelBtn:hover, #agentBtn:hover { background: var(--bg); color: var(--fg); }
+  #agentBtn {
+    flex: none; height: 32px; padding: 0 6px 0 8px; border-radius: 16px;
+    color: var(--fg2); font-size: 12px; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;
+  }
+  #agentBtn > svg { width: 10px; height: 10px; }
+  .alogo { width: 14px; height: 14px; flex: none; display: inline-block; }
+  .alogo svg { width: 14px; height: 14px; display: block; }
+  .alogo.codex { background: var(--fg); -webkit-mask: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAAkCAYAAADhAJiYAAAAAXNSR0IArs4c6QAAAHhlWElmTU0AKgAAAAgABAEaAAUAAAABAAAAPgEbAAUAAAABAAAARgEoAAMAAAABAAIAAIdpAAQAAAABAAAATgAAAAAAAACQAAAAAQAAAJAAAAABAAOgAQADAAAAAQABAACgAgAEAAAAAQAAACSgAwAEAAAAAQAAACQAAAAA+INbXQAAAAlwSFlzAAAWJQAAFiUBSVIk8AAABnlJREFUWAnN1X2sjmUcwPGTd5K3kbfDOMi8lkI7eYlF5WBpKFqt1VrFLE3IGStNsqz6I3rR/GGts6OXUbPQq0NktKWGmjDCcXCI8lIc1Pd7en6P53k4B3/Vb/uc+3ru+7rv+3f9ruu6T1bW/yyuucJ87KfzaIZcdEE9HMPP+BYHYb8q+Bup4e/Mc6nXr7gdSTfmjnxsQilOogx/4hA8PwONUFGYaFXEMy/qV+GFlJscVVe8jDycxkpswQk0QG/0xTksQxGsXlv8hWKY8Bp4v4kZVvyqI5s7TMDElmIIPFcH1eGIfflTOI6YmszjXq4VYigivDctqqX9uvDD8z6wNsbjLizGs9iD1DAxK9QTdXEAP2A7XFO1YKV6YAx6oSnexylYrUorZYdI1Kk6gh1oByNGVZN2H8zHWTiA1XgCzZAaLg2Tngen8DDGwnfF82heHN4YUZ/GFJj9bJiAD/CYg2ewFyZiNWagBSJq0LBvZszkhBthI6yaUWlSPuhmvAbL/wdcN64XE86DW9xEnJIF8BMQYXWdkpEYjYZwIIbH2vgQ3j8HPjNmhOaFsLMvnQQT8QYdhevDG10PX8Dzy9EfhtfCINrR50yiPZijYR/jIXhtFZrAiGvlP2IETo0LzYQK8SPcObfAuBaW2o/hCKSWuju/F8FrJrwNmxNt1+E7cE0aHeDC3wnXlpGWkCfuhzf6QMvdFp/Db00k5I5aj1L0g9EKz2EL/MaYxGR0QkdMw36YpAm4LjvDClt9l4CRlpDz/DW8KT9x8XqOJnQcqQlZISs4Cq4RE/S+8CZtt3/EdTRy8QZSd2Mxv7eiL5yhtISGccKtuAHtYTgK10JqQj78G5yECzumZwntAvyGEizCCNRBRGMaDuITRPK+L6Yslg2nsrLmwu/DdPgQs3XKIqFetI16sGo+0NFanXFojmxMgC/x+i7MRE+k7qLW/H4aW+AUvwLXZlpCiznhQx5BRBsavtxt3w0maUKrcAbzkIPM8Nzb8GU+czOehAP0GRF5NPbBb9KDcTKOH9Dw5ofjBEcf7Lo6gR4w/EZZFad3AIzaqJJg2xgEE3FqHZDPXoE74aB8juH7THwtGiBZJr+459AS1WE4Gjs7hSPRGE7TeXitVuJYljjnedte8xluim2wOq67wViGxxDLwnW4BjfAQSQTctQuyIFoAx/q1nYNmWg+/E8/BlbBxOxTUViRanA6XA4u8Fnw3DCYrH1+RREaIRfJhL6ivR39cRvs7CJfiOH4En3h2uiIQ7Aa9rMaMWW2416PnjcJB/sRnEIr6zXDtbgPVdEayYT8QL0Fyz4bebCz8/8ZLPt4OCLL3QGjkAOr4H2y7Tmn2LXioKyo1bTSJmJ1IyGayRy8PxmOxK3nFjwNt+REtEaEI+2JF7AbPnQDJiAbzTEOTn+81MGYmHETHOAaOCCTdHDTYeJzkQwTMm6FL/Fl+hij4YKO8CH3YhFK4HQUYAm8x9/r4PT4cj+mRneYkAu8K4z28H2HMRTJMFuT6oetKMZa+AJL7b+DXMTDaZb/e/B8JO/RXeN06QA2wsobkZBJtoDvzIf3uYbLtz3H8vCikQdHuAJdMBU74U374QNc1J0wBZthuT3OgFNn9EcpnL7UhI7z24SsjFU+hiO4D2kRCTllu7AJ7RI9TMzdZVlNzPW1LdF2MyxEN0S4Y+JlTkfdxAUr9Dt+QiEc4Cm8CMMZSkYk1IQzRXC3jIUR1wbSXo7TcBo/xQAY9ol+Vsd+Ju93zG1u3Air4Xk5pZNQHWnJ8Ls8qvHXh86BNziKmojOHuvjHgyHC91qRFjJBTgI73c9uQR8ps++A1bI66+iB2qgwoiH2/E7WE7XRWY4Il8Q4QK1nx9WE9mLyWiHGJDH5+G3xrXnwCKisvE77WhSegCuGafudfRG5o3NOfc4VsNEzmI++sAEDJ9l5OAXOGVdYTioqH75iUv9sYMvdmc8ih3wZVvxHmbBD9k8uBNL4PV3MQh+ozKjFScKYL+X4CKPgdO8fMSo7DkUhdgDH5jK8vvbrTwR9eConVITy8YQLIX9VsJzlUbmNERnK2X4UsvvznFttUz83s3Rr+7tcIGbyDpsxFFYBafmbni/u24qrHS80ySvKrzRakVyl7q5ISedwu/h7nEjlOEkSrEJ0+CONCKZf39d4u9lOyTusV9mX3/HtDWlnYvO8F+A1bMa6+H3xkFZkauuCvf8t/EPMY21onifBi8AAAAASUVORK5CYII=) center / contain no-repeat; }
+  #agentBtn .alogo { margin-right: 3px; }
+  #agentBtn:disabled { opacity: .5; cursor: default; background: none; }
+  #agentMenu, #actions, #modelMenu { min-width: 0; width: max-content; max-width: calc(100vw - 16px); padding: 4px; }
+  #agentMenu .item { display: flex; align-items: center; gap: 8px; }
+  #agentMenu .item .ck { width: 14px; color: var(--flower); flex: none; text-align: right; }
+  #agentMenu .item { padding: 6px 10px 6px 8px; gap: 8px; }
+  #agentMenu .item > span:nth-child(2) { margin-right: 14px; }
+  #modelBtn:disabled { opacity: .5; cursor: default; background: none; }
+  #modelBtn svg { width: 10px; height: 10px; }
+  .menu .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 8px; color: var(--fg2); }
+  .menu select {
+    font: inherit; color: var(--fg); background: var(--bg); border: 0; border-radius: 8px;
+    padding: 4px 6px; cursor: pointer; outline: none;
+  }
+  .menu select:disabled { opacity: .5; }
+  .menu .item { display: block; width: 100%; text-align: left; padding: 7px 8px; border-radius: 8px; color: var(--fg); }
+  .menu .item:hover { background: var(--bg); }
+  .menu .sep { height: 1px; background: var(--line); margin: 4px 2px; }
+  .menu .hint { color: var(--fg3); font-size: 11px; padding: 2px 8px 4px; }
+
+  /* ---------- transcript */
+  #logs { flex: 1; position: relative; min-height: 0; display: flex; }
+  .log { flex: 1; overflow-y: auto; padding: 54px 14px 16px; display: none; flex-direction: column; gap: 10px; }
+  .log.active { display: flex; }
+  /* ---------- tabs: one agent per tab */
+  #tabs { display: flex; align-items: center; gap: 4px; padding: 0 10px 6px; overflow-x: auto; }
+  .tab { display: inline-flex; align-items: center; gap: 5px; max-width: 150px; height: 26px; padding: 0 6px 0 9px; border-radius: 8px; color: var(--fg2); font-size: 12px; white-space: nowrap; flex: none; }
+  .tab:hover { background: var(--surface); }
+  .tab.active { background: var(--surface); box-shadow: var(--shadow); color: var(--fg); }
+  .tab .tl { overflow: hidden; text-overflow: ellipsis; }
+  .tab .ti { width: 14px; height: 14px; display: inline-grid; place-items: center; flex: none; }
+  .tab .ti .flower { width: 14px; height: 14px; }
+  .tab .ti .d { width: 6px; height: 6px; border-radius: 50%; background: var(--flower); }
+  .tab .ti .q { font-size: 10px; color: var(--fg3); }
+  .tab .tx { color: var(--fg3); font-size: 13px; line-height: 1; padding: 0 2px; visibility: hidden; }
+  .tab:hover .tx, .tab.active .tx { visibility: visible; }
+  .tab .tx:hover { color: var(--fg); }
+  #newTab { width: 26px; height: 26px; border-radius: 8px; color: var(--fg3); display: grid; place-items: center; flex: none; }
+  #newTab:hover { background: var(--surface); color: var(--fg); }
+  #newTab svg { width: 13px; height: 13px; }
+  .msg { white-space: pre-wrap; word-break: break-word; }
+  .user {
+    align-self: flex-end; max-width: 88%;
+    background: var(--bubble); padding: 9px 13px; border-radius: 16px;
+  }
+  .user .ctx { color: var(--fg2); font-size: 11px; margin-top: 4px; }
+  .assistant { color: var(--fg); }
+  /* agent replies are Markdown: render it instead of showing ** - ` literally */
+  .msg.assistant { white-space: normal; line-height: 1.65; }
+  .assistant p { margin: 0 0 8px; }
+  .assistant p:last-child, .assistant ul:last-child, .assistant ol:last-child { margin-bottom: 0; }
+  .assistant ul, .assistant ol { margin: 0 0 8px; padding-left: 18px; }
+  .assistant li { margin: 3px 0; padding-left: 2px; }
+  .assistant li::marker { color: var(--fg3); }
+  .assistant b { font-weight: 600; }
+  .assistant .h { font-weight: 600; margin: 4px 0 6px; }
+  .assistant code {
+    font: 11.5px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--bubble);
+    padding: 1px 5px; border-radius: 5px; white-space: normal; word-break: normal; overflow-wrap: break-word;
+  }
+  .step { color: var(--fg2); font-size: 12.5px; line-height: 1.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .step .times { color: var(--fg3); margin-left: 4px; }
+  /* one compact block per turn: live phase + timer + step count; steps folded inside */
+  .work { display: flex; flex-direction: column; gap: 6px; }
+  .work .head { display: flex; align-items: center; gap: 7px; cursor: pointer; width: max-content; max-width: 100%; color: var(--fg2); font-size: 12.5px; line-height: 1.5; user-select: none; }
+  .work .head:hover .label { color: var(--fg); }
+  .work .head .chev { width: 10px; height: 10px; flex: none; transition: transform .15s; color: var(--fg3); }
+  .work.open .head .chev { transform: rotate(90deg); }
+  .work.done .flower { display: none; }
+  .work .group { display: none; }
+  .work.open .group { display: flex; }
+  .step .detail { color: var(--fg3); }
+  .meta { color: var(--fg3); font-size: 11.5px; margin-top: -4px; }
+  .err { color: var(--danger); }
+  .shimmer {
+    font-size: 12.5px; width: max-content; margin-top: -4px;
+    background: linear-gradient(90deg, var(--fg3) 0%, var(--fg3) 40%, var(--fg) 50%, var(--fg3) 60%, var(--fg3) 100%);
+    background-size: 300% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: shimmer 1.6s linear infinite;
+  }
+  @keyframes shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
+  /* running indicator: hand-drawn flower, only visible while the AI works */
+  :root { --flower: #5f6ff0; }
+  html.figma-dark { --flower: #8f9bff; }
+  .status { display: flex; align-items: center; gap: 7px; margin-top: -4px; }
+  .status .shimmer { margin-top: 0; }
+  .flower { width: 20px; height: 20px; flex: none; overflow: visible; color: var(--flower); }
+  /* the flower is drawn stroke by stroke, the centre is dotted in, then it fades and redraws */
+  .flower .draw { stroke-dasharray: 1 1; animation: fdraw 2.8s ease-in-out infinite; }
+  .flower .draw.ghost { animation-name: fdraw2; }
+  .flower .dot { transform-box: fill-box; transform-origin: center; animation: fdotin 2.8s ease-in-out infinite; }
+  /* draw on (0–50%), hold, then erase along the same stroke direction (68–95%) */
+  @keyframes fdraw { 0% { stroke-dashoffset: 1; } 50% { stroke-dashoffset: 0; } 68% { stroke-dashoffset: 0; } 95%, 100% { stroke-dashoffset: -1; } }
+  @keyframes fdraw2 { 0%, 10% { stroke-dashoffset: 1; opacity: .45; } 56% { stroke-dashoffset: 0; } 72% { stroke-dashoffset: 0; } 97%, 100% { stroke-dashoffset: -1; opacity: .45; } }
+  @keyframes fdotin { 0%, 50% { transform: scale(0); } 58% { transform: scale(1.25); } 63%, 66% { transform: scale(1); } 72%, 100% { transform: scale(0); } }
+  /* ---------- minimized: only a tiny button (animated flower while the agent works) */
+  #mini { display: none; position: fixed; inset: 0; width: 100%; height: 100%; align-items: center; justify-content: center; gap: 6px; background: var(--bg); color: var(--fg2); }
+  #mini:hover { background: var(--surface); }
+  #miniIcon svg { width: 18px; height: 18px; display: block; }
+  #miniIcon > svg { color: var(--flower); }
+  .ficon { width: 20px; height: 20px; display: block; }
+  #miniIcon .flower { width: 20px; height: 20px; }
+  #miniDot { width: 6px; height: 6px; border-radius: 50%; background: var(--fg3); }
+  #miniDot { display: none; } #miniDot.new { display: block; background: var(--flower); } #miniDot.off { display: block; background: #ff3b30; }
+  body.minimized > *:not(#mini):not(svg) { display: none !important; }
+  body.minimized #mini { display: flex; }
+  #foreignNote { display: none; margin: 0 10px 6px; padding: 8px 12px; border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); color: var(--fg2); font-size: 12px; }
+  #foreignNote.on { display: block; }
+  #foreignNote b { color: var(--fg); font-weight: 600; }
+  #hlist .hitem.other .t { color: var(--fg2); }
+  /* ---------- first-run onboarding */
+  #onboard { position: fixed; inset: 0; z-index: 60; background: var(--bg); display: none; flex-direction: column;
+    align-items: center; justify-content: center; padding: 24px 28px; text-align: center; }
+  #onboard.on { display: flex; }
+  #onboard .ob-flower { color: var(--flower); margin-bottom: 14px; }
+  #onboard .ob-flower svg { width: 56px; height: 56px; }
+  #onboard h1 { font-size: 17px; font-weight: 600; margin: 0 0 6px; }
+  #onboard .sub { color: var(--fg2); margin: 0 0 18px; max-width: 280px; }
+  #onboard ul { list-style: none; padding: 0; margin: 0 0 22px; text-align: left; max-width: 290px; }
+  #onboard li { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 10px; color: var(--fg); }
+  #onboard li .ic { flex: none; width: 22px; height: 22px; border-radius: 7px; background: var(--surface); box-shadow: var(--shadow);
+    display: grid; place-items: center; font-size: 12px; }
+  #onboard li span:last-child { color: var(--fg2); }
+  #onboard li b { color: var(--fg); font-weight: 600; display: block; }
+  #obBtn { min-width: 160px; height: 38px; border-radius: 19px; background: var(--fg); color: var(--bg); font-weight: 600; padding: 0 22px; }
+  #obBtn:disabled { cursor: default; }
+  #obBtn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+  #obBtn.loading { opacity: .85; }
+  #obBtn .spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent;
+    animation: obspin .7s linear infinite; flex: none; }
+  @keyframes obspin { to { transform: rotate(360deg); } }
+  #obStatus { margin-top: 14px; min-height: 18px; color: var(--fg2); font-size: 12px; max-width: 300px; }
+  #obStatus .ok { color: var(--fg); }
+  #obStatus .agents { display: flex; gap: 14px; justify-content: center; margin-top: 2px; }
+  #obStatus .agents span { display: inline-flex; align-items: center; gap: 6px; }
+  #obStatus .err { color: var(--danger); }
+  #obStatus code { font: 11px ui-monospace, Menlo, monospace; background: var(--bubble); padding: 1px 5px; border-radius: 5px; }
+  /* ---------- drawer tabs: Chats / Skills / Memory */
+  .dseg { display: flex; margin: 2px 12px 6px; background: var(--bubble); border-radius: 10px; padding: 3px; }
+  .dseg button { flex: 1; padding: 5px 0; border-radius: 8px; color: var(--fg2); font-weight: 500; font-size: 12.5px; }
+  .dseg button.on { background: var(--surface); color: var(--fg); box-shadow: var(--shadow); }
+  .dpane { flex: 1; overflow-y: auto; padding: 0 8px 12px; display: none; }
+  .dpane.on { display: block; }
+  .mgroup { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--fg3); padding: 12px 10px 4px; letter-spacing: .02em; text-transform: uppercase; }
+  .mgroup .gt { display: inline-flex; align-items: center; gap: 6px; cursor: default; }
+  .mgroup .gtag { text-transform: none; letter-spacing: 0; font-size: 10.5px; color: var(--fg2); background: var(--bubble); border-radius: 6px; padding: 1px 6px; }
+  .mgroup .add { color: var(--flower); font-weight: 600; text-transform: none; letter-spacing: 0; font-size: 12px; }
+  .mfile { padding: 0 10px 2px; color: var(--fg2); font-size: 11.5px; }
+  .mitem { display: flex; gap: 8px; align-items: flex-start; padding: 7px 10px; border-radius: 10px; line-height: 1.45; }
+  .mitem:hover { background: var(--surface); box-shadow: var(--shadow); }
+  .mitem .bul { width: 6px; height: 6px; border-radius: 50%; background: var(--flower); margin-top: 7px; flex: none; }
+  .mitem .tx { flex: 1; min-width: 0; outline: none; word-break: break-word; }
+  .mitem .src { display: block; color: var(--fg3); font-size: 11px; }
+  .mitem .acts { display: none; gap: 2px; flex: none; }
+  .mitem:hover .acts { display: flex; }
+  .mitem .acts button { width: 22px; height: 22px; border-radius: 6px; color: var(--fg3); display: grid; place-items: center; }
+  .mitem .acts button:hover { background: var(--bg); color: var(--fg); }
+  .mempty { color: var(--fg3); font-size: 12px; padding: 4px 10px; }
+  .madd { display: flex; gap: 6px; padding: 4px 8px; }
+  .madd input { flex: 1; border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font: inherit; background: var(--surface); color: var(--fg); outline: none; }
+  /* ---------- ask_user card + memory chips in the transcript */
+  .askcard { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); padding: 12px; max-width: 100%; }
+  .askcard .q { font-weight: 600; margin-bottom: 8px; white-space: normal; }
+  .askcard .opt { display: flex; gap: 8px; align-items: flex-start; width: 100%; text-align: left; padding: 8px 10px; border-radius: 10px; background: var(--bg); margin-top: 6px; }
+  .askcard .opt:hover:not(:disabled) { box-shadow: inset 0 0 0 1.5px var(--flower); }
+  .askcard .opt.sel { box-shadow: inset 0 0 0 1.5px var(--flower); background: #f1f2ff; }
+  html.figma-dark .askcard .opt.sel { background: #2a2c48; }
+  .askcard .opt .od { display: block; color: var(--fg2); font-size: 12px; }
+  .askcard .opt .peek { margin-left: auto; color: var(--fg3); font-size: 11px; flex: none; }
+  .askcard .opt:disabled { cursor: default; }
+  .askcard .other { display: flex; gap: 6px; margin-top: 8px; }
+  .askcard .other input { flex: 1; border: 1px solid var(--line); border-radius: 10px; padding: 7px 9px; font: inherit; background: var(--surface); color: var(--fg); outline: none; }
+  .askcard .go { padding: 6px 12px; border-radius: 14px; background: var(--fg); color: var(--bg); font-weight: 600; font-size: 12px; }
+  .askcard .go:disabled { opacity: .4; cursor: default; }
+  .askcard .st { margin-top: 8px; color: var(--fg3); font-size: 11.5px; }
+  .askcard.done .opt:not(.sel) { opacity: .5; }
+  .memchip { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); font-size: 12px; align-self: flex-start; max-width: 100%; }
+  .memchip .q { color: var(--fg2); }
+  .memchip button { font-size: 12px; font-weight: 600; color: var(--flower); }
+  .memchip button.no { color: var(--fg3); font-weight: 500; }
+  .memnote { color: var(--fg3); font-size: 11.5px; align-self: flex-start; cursor: pointer; }
+  /* ---------- skills pane + add sheet */
+  .sitem { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border-radius: 10px; }
+  .sitem:hover { background: var(--surface); box-shadow: var(--shadow); }
+  .sitem .si { width: 26px; height: 26px; border-radius: 8px; background: var(--surface); box-shadow: var(--shadow); display: grid; place-items: center; flex: none; font-size: 12px; color: var(--fg2); }
+  .sitem .sb { flex: 1; min-width: 0; }
+  .sitem .sn { font-weight: 600; }
+  .sitem .sd { color: var(--fg2); font-size: 12px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+  .sitem .lbl { color: var(--fg3); font-size: 11px; flex: none; padding-top: 2px; }
+  .sitem .del { display: none; color: var(--fg3); width: 22px; height: 22px; border-radius: 6px; flex: none; }
+  .sitem:hover .del { display: grid; place-items: center; }
+  .sitem .del:hover { background: var(--bg); color: var(--danger); }
+  .tgl { width: 30px; height: 18px; border-radius: 9px; background: #cfcfcf; position: relative; flex: none; margin-top: 2px; }
+  .tgl::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: left .15s; }
+  .tgl.on { background: var(--flower); }
+  .tgl.on::after { left: 14px; }
+  #skillSheetWrap { position: fixed; inset: 0; z-index: 45; background: rgba(0,0,0,.18); display: none; }
+  #skillSheetWrap.on { display: block; }
+  #skillSheet { position: absolute; left: 10px; right: 10px; bottom: 10px; background: var(--surface); border-radius: 16px; box-shadow: 0 8px 30px rgba(0,0,0,.18); padding: 16px; max-height: calc(100% - 20px); overflow-y: auto; }
+  #skillSheet h3 { margin: 0 0 8px; font-size: 14px; }
+  #skTo { display: flex; background: var(--bubble); border-radius: 10px; padding: 3px; margin-bottom: 8px; }
+  #skTo button { flex: 1; padding: 5px 0; border-radius: 8px; color: var(--fg2); font-weight: 500; font-size: 12px; }
+  #skTo button.on { background: var(--surface); color: var(--fg); box-shadow: var(--shadow); }
+  #skTo button:disabled { opacity: .4; cursor: default; }
+  .mempty.err { color: var(--danger); }
+  .mmove { margin: 6px 2px; padding: 9px 10px; border-radius: 10px; background: var(--surface); box-shadow: var(--shadow); font-size: 12px; color: var(--fg2); display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+  .mmove button { color: var(--flower); font-weight: 600; font-size: 12px; }
+  .etile { display: flex; gap: 10px; align-items: center; width: calc(100% - 4px); margin: 2px 2px 4px; padding: 9px 10px; border-radius: 10px; border: 1.5px dashed var(--line2, #d6d6da); text-align: left; }
+  .etile:hover { border-color: var(--flower); background: var(--surface); }
+  .etile .ei { width: 26px; height: 26px; border-radius: 8px; background: var(--surface); box-shadow: var(--shadow); display: grid; place-items: center; flex: none; color: var(--flower); font-weight: 600; }
+  .etile .eb { display: flex; flex-direction: column; min-width: 0; }
+  .etile .et { font-weight: 600; color: var(--fg); }
+  .etile .es { color: var(--fg2); font-size: 12px; line-height: 1.4; }
+  html.figma-dark .etile { border-color: #4a4a4a; }
+  #skillSheet .sub { color: var(--fg2); font-size: 12px; margin-bottom: 12px; }
+  #skDrop { border: 1.5px dashed #c9cdf7; background: #f5f6ff; border-radius: 12px; padding: 16px; text-align: center; color: var(--fg2); cursor: pointer; }
+  html.figma-dark #skDrop { background: #262842; border-color: #4a4f8a; }
+  #skDrop.over { border-color: var(--flower); }
+  #skDrop b { color: var(--flower); }
+  #skillSheet .or { text-align: center; color: var(--fg3); font-size: 11px; margin: 10px 0; }
+  #skText { width: 100%; height: 90px; border: 1px solid var(--line); border-radius: 10px; padding: 9px; font: 12px/1.45 ui-monospace, Menlo, monospace; background: var(--surface); color: var(--fg); resize: vertical; outline: none; }
+  #skPrev { display: none; gap: 10px; align-items: center; border: 1px solid var(--line); border-radius: 10px; padding: 10px; margin-top: 10px; }
+  #skPrev.on { display: flex; }
+  #skErr { color: var(--danger); font-size: 12px; margin-top: 8px; min-height: 0; white-space: pre-wrap; }
+  #skillSheet .row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+  #skillSheet .row button { padding: 7px 14px; border-radius: 16px; font-weight: 600; }
+  #skCancel { background: var(--bubble); }
+  #skAdd { background: var(--fg); color: var(--bg); }
+  #skAdd:disabled { opacity: .4; cursor: default; }
+  /* ---------- chats list */
+  #historyBtn { position: relative; }
+  #runBadge { position: absolute; top: -3px; right: -3px; min-width: 14px; height: 14px; border-radius: 7px; background: var(--flower); color: #fff; font-size: 9px; line-height: 14px; text-align: center; padding: 0 3px; display: none; }
+  #runBadge.on { display: block; }
+  /* no counts: a tiny drawing flower while other chats work, a plain dot when they have unseen replies */
+  #runBadge.dot { min-width: 0; width: 8px; height: 8px; padding: 0; top: 0; right: 0; border-radius: 50%; box-shadow: 0 0 0 2px var(--surface); }
+  #runBadge.run { min-width: 0; width: 16px; height: 16px; padding: 0; top: -4px; right: -4px; border-radius: 50%;
+    background: var(--surface); box-shadow: var(--shadow); display: grid; place-items: center; }
+  #runBadge.run .flower { width: 13px; height: 13px; }
+  #hlist .hitem { display: flex; align-items: center; gap: 8px; text-align: left; cursor: pointer; }
+  .hitem .hs { width: 22px; height: 22px; flex: none; display: grid; place-items: center; position: relative; }
+  .hitem .hs .eicon, .hitem .hs .eicon .ficon { width: 22px; height: 22px; display: block; }
+  .hitem .hs .flower { width: 22px; height: 22px; }
+  .hitem .hs .d { position: absolute; top: -1px; right: -2px; width: 7px; height: 7px; border-radius: 50%; background: var(--flower); box-shadow: 0 0 0 2px var(--bg); }
+  .hitem .hb { flex: 1; min-width: 0; }
+  .hitem .hdel { opacity: 0; color: var(--fg3); width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; flex: none; }
+  .hitem:hover .hdel { opacity: 1; }
+  .hitem .hdel:hover { color: var(--danger); background: var(--bg); }
+  .hitem .hdel svg { width: 14px; height: 14px; }
+  /* ---------- history */
+  /* chats: a drawer sliding in from the left over the conversation */
+  #history {
+    position: absolute; top: 0; bottom: 0; left: 0; width: min(300px, 84%); z-index: 30;
+    background: var(--bg); display: flex; flex-direction: column;
+    box-shadow: 0 0 0 1px var(--line), 8px 0 24px rgba(0,0,0,.12);
+    border-radius: 0 16px 16px 0;
+    transform: translateX(-105%); transition: transform .22s cubic-bezier(.2,.8,.2,1); visibility: hidden;
+  }
+  #history.open { transform: none; visibility: visible; }
+  #history:not(.open) { transition: transform .18s ease-in, visibility 0s .18s; }
+  #scrim { position: absolute; inset: 0; z-index: 29; background: rgba(0,0,0,.18); opacity: 0; pointer-events: none; transition: opacity .2s; }
+  #scrim.open { opacity: 1; pointer-events: auto; }
+  html.figma-dark #scrim { background: rgba(0,0,0,.4); }
+  #historyBack { display: none; }
+  .hhead { padding-left: 14px !important; }
+  .hhead { display: flex; align-items: center; gap: 10px; padding: 10px 14px 8px 10px; font-size: 13px; }
+  #hlist { flex: 1; overflow-y: auto; padding: 0 8px 12px; display: none; }
+  #hlist.on { display: block; }
+  #gardenBar { display: none; align-items: center; gap: 10px; padding: 10px 14px 12px; border-top: 1px solid var(--line); }
+  #history.tab-chats #gardenBar { display: flex; }
+  #gardenBar .gl { font-size: 12px; color: var(--fg2); flex: 1; }
+  #gswatches { display: flex; gap: 6px; align-items: center; }
+  #gswatches button { width: 13px; height: 13px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); flex: none; }
+  #gswatches button.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--fg2); }
+  #gswatches button.rainbow { background: conic-gradient(#5f6ff0, #8c6be8, #e0789a, #d9694a, #e39a2f, #3fa37a, #3a9fd6, #5f6ff0); }
+  .hitem { display: block; width: 100%; text-align: left; padding: 9px 10px; border-radius: 10px; }
+  .hitem:hover { background: var(--surface); }
+  .hitem.cur { background: var(--surface); box-shadow: var(--shadow); }
+  .hitem .t { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hitem .s { font-size: 11px; color: var(--fg3); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hgroup { font-size: 11px; color: var(--fg3); padding: 10px 10px 4px; }
+  header .icon-btn + .icon-btn { margin-left: 2px; }
+
+  .summary {
+    color: var(--fg2); font-size: 12.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;
+    width: max-content; margin-top: -4px; user-select: none;
+  }
+  .summary:hover { color: var(--fg); }
+  .summary svg { width: 10px; height: 10px; transition: transform .15s; }
+  .summary.open svg { transform: rotate(90deg); }
+  .group { display: none; flex-direction: column; gap: 8px; border-left: 1.5px solid var(--line); padding: 2px 0 2px 10px; margin-top: -2px; }
+  .group.open { display: flex; }
+  .group .msg { margin-top: 0; }
+  /* pinned to the window centre so the composer growing/shrinking doesn't move it */
+  .empty {
+    position: fixed; left: 50%; top: 45%; transform: translate(-50%, -50%);
+    text-align: center; color: var(--fg3); font-size: 13px; white-space: nowrap; pointer-events: none;
+  }
+
+  /* ---------- composer */
+  #composer {
+    margin: 0 10px 10px; background: var(--surface); box-shadow: var(--shadow);
+    border-radius: 22px; padding: 6px;
+  }
+  #chips { display: flex; gap: 6px; flex-wrap: wrap; padding: 2px 6px 4px 6px; }
+  #imgs { display: none; gap: 6px; padding: 4px 6px; flex-wrap: wrap; }
+  #imgs.on { display: flex; }
+  #imgs .im { position: relative; width: 48px; height: 48px; border-radius: 8px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--line); background: var(--bg) center / cover no-repeat; }
+  #imgs .im button { position: absolute; top: 2px; right: 2px; width: 16px; height: 16px; border-radius: 50%; background: rgba(0,0,0,.6); color: #fff; font-size: 10px; line-height: 16px; text-align: center; display: none; }
+  #imgs .im:hover button { display: block; }
+  #composer.drop { box-shadow: 0 0 0 2px var(--flower); }
+  .msg.user .uimgs { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .msg.user .uimgs img { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; display: block; }
+  #actions .item { display: flex; align-items: center; gap: 10px; padding: 7px 10px 7px 8px; min-width: 200px; }
+  #actions .item .mi { width: 16px; height: 16px; flex: none; color: var(--fg2); }
+  #actions .item:hover .mi { color: var(--fg); }
+  #actions .item .mk { margin-left: auto; padding-left: 16px; color: var(--fg3); font-size: 11.5px; }
+  #actions .msec { margin: 4px 4px 0; padding: 8px 6px 4px; border-top: 1px solid var(--line); color: var(--fg3); font-size: 11px; letter-spacing: .02em; text-transform: uppercase; }
+  #chips:empty { display: none; }
+  .chip {
+    font-size: 11px; color: var(--fg2); background: var(--bg);
+    border-radius: 6px; padding: 1px 7px; max-width: 160px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .chip.comment { cursor: pointer; color: var(--fg); max-width: none; }
+  .chip.comment:hover { background: var(--bubble); }
+  .chip.action {
+    color: var(--fg); background: var(--bubble); font-weight: 500;
+    display: inline-flex; align-items: center; gap: 4px; max-width: none;
+  }
+  .chip.action button { color: var(--fg2); font-size: 13px; line-height: 1; padding: 0 0 0 2px; }
+  .chip.action button:hover { color: var(--fg); }
+  .user .tag { display: inline-block; font-size: 11.5px; font-weight: 500; background: rgba(0,0,0,.06); border-radius: 6px; padding: 0 6px; margin-bottom: 3px; }
+  html.figma-dark .user .tag { background: rgba(255,255,255,.1); }
+  .bar {
+    display: grid; align-items: end; gap: 6px;
+    grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+    grid-template-areas: "plus input agent model send";
+  }
+  #plus { grid-area: plus; } #input { grid-area: input; min-width: 0; } #agentBtn { grid-area: agent; } #modelBtn { grid-area: model; } #send { grid-area: send; }
+  /* more than one line: text gets the full width, buttons move to a row below */
+  #composer.multi .bar {
+    grid-template-columns: auto minmax(0, auto) minmax(0, 1fr) auto;
+    grid-template-areas: "input input input input" "plus agent model send";
+    row-gap: 4px;
+  }
+  /* buttons shrink before anything overflows: names get an ellipsis, then the agent shows only its logo */
+  #agentBtn, #modelBtn { min-width: 0; max-width: 100%; overflow: hidden; }
+  #agentName, #modelName { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  @media (max-width: 380px) { #agentName { display: none; } #agentBtn .alogo { margin-right: 0; } }
+  #composer.multi #input { padding: 8px 8px 4px; min-height: 40px; }
+  #composer.multi #modelBtn { justify-self: end; }
+  .round { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+  #plus { background: var(--bg); color: var(--fg2); }
+  #plus svg, .icon-btn svg { width: 15px; height: 15px; display: block; }
+  #plus:hover { color: var(--fg); }
+  #send { background: var(--btn); color: var(--onbtn); }
+  #send:disabled { opacity: .25; cursor: default; }
+  #send svg { width: 14px; height: 14px; }
+  textarea {
+    flex: 1; resize: none; border: 0; outline: none; background: transparent;
+    font: inherit; color: var(--fg); padding: 6px 2px; min-height: 32px; max-height: 150px;
+  }
+  textarea::placeholder { color: var(--fg3); }
+  #grip {
+    position: fixed; right: 0; bottom: 0; width: 14px; height: 14px; z-index: 20;
+    cursor: nwse-resize; color: var(--fg3); touch-action: none;
+  }
+  #grip svg { width: 14px; height: 14px; display: block; }
+  #grip:hover { color: var(--fg2); }
+</style>
+</head>
+<body>
+  <header>
+    <button class="icon-btn" id="historyBtn" title="Errands"><span id="runBadge"></span><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2.75 5.5h10.5M2.75 10.5h6.5"/></svg></button>
+    <span id="dot" class="dot" title="Connecting…"></span>
+    <div id="title">New errand</div>
+    <button class="icon-btn" id="minBtn" title="Minimize"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 8h8"/></svg></button>
+  </header>
+
+  <div class="menu" id="commentsMenu"></div>
+  <div class="menu" id="agentMenu"></div>
+  <div class="menu" id="modelMenu">
+    <div class="row">Model
+      <select id="model"></select>
+    </div>
+    <div class="row">Reasoning
+      <select id="effort">
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+        <option value="xhigh">Max</option>
+      </select>
+    </div>
+    <div class="hint">Switching keeps the current errand</div>
+  </div>
+
+
+  <div class="menu" id="actions">
+    <button class="item attach" type="button"><svg class="mi" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.2c0-.9.7-1.7 1.7-1.7h7.6c.9 0 1.7.8 1.7 1.7v7.6c0 .9-.8 1.7-1.7 1.7H4.2c-1 0-1.7-.8-1.7-1.7z"/><circle cx="6" cy="6.2" r="1.1"/><path d="m3 12 3.4-3.4 2.3 2.3 1.6-1.6L13 12"/></svg><span>Add image…</span><span class="mk">⌘V</span></button>
+    <div class="msec">Quick actions</div>
+    <input type="file" id="imgFile" accept="image/png,image/jpeg,image/webp,image/gif" multiple style="display:none">
+    <button class="item" data-q="Before any other tool call, load the flows-prototype skill, then follow its Quick action playbook (steps, self-check, report format). Arrange the selected screens in user-flow order and connect them into a flow diagram with arrows labelled with the triggering action"><svg class="mi" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="1.8" y="2.5" width="4.4" height="4.4" rx="1"/><rect x="9.8" y="9.1" width="4.4" height="4.4" rx="1"/><path d="M4 7v2.6c0 .8.6 1.5 1.5 1.5h3.8"/><path d="m7.8 9.6 1.5 1.5-1.5 1.5"/></svg><span>Connect as flow</span></button>
+    <button class="item" data-q="Before any other tool call, load the design-system skill, then follow its Quick action playbook (steps, self-check, report format). Find everything in the selection that does not use the design system (hardcoded colors, font sizes, spacing, non-component elements) and fix it"><svg class="mi" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="m8 1.8 2.3 2.3L8 6.4 5.7 4.1z"/><path d="m4.1 5.7 2.3 2.3-2.3 2.3L1.8 8z"/><path d="m11.9 5.7 2.3 2.3-2.3 2.3L9.6 8z"/><path d="m8 9.6 2.3 2.3L8 14.2l-2.3-2.3z"/></svg><span>Apply design system</span></button>
+    <button class="item" data-q="Before any other tool call, load the screen-design skill, then follow its Quick action playbook (steps, self-check, report format). Create a new screen to the right of the selection, following this file's style and components"><svg class="mi" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="1.8" width="9" height="12.4" rx="1.6"/><path d="M8 5.8v4.4M5.8 8h4.4"/></svg><span>New screen</span></button>
+    <button class="item" data-q="Before any other tool call, load the layer-naming skill, then follow its Quick action playbook (steps, self-check, report format). Rename every layer, instance and screen inside the selection so it follows the team naming rules. Only change names, nothing else. Afterwards list anything you were unsure about"><svg class="mi" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5V3h7v1.5M6.5 3v9M5 12h3"/><path d="M11.5 7.5v6M10.3 7.5h2.4M10.3 13.5h2.4"/></svg><span>Rename layers</span></button>
+  </div>
+
+  <div id="scrim"></div>
+  <div id="history" class="tab-chats">
+    <div class="hhead"><button class="icon-btn" id="historyBack" title="Back"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 5 8l5 5"/></svg></button><b>Errands</b><span style="flex:1"></span><button class="icon-btn" id="newFromList" title="New errand"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg></button></div>
+    <div class="dseg" id="dseg"><button data-t="chats" class="on">Errands</button><button data-t="skills">Skills</button><button data-t="memory">Memory</button></div>
+    <div id="hlist" class="dpane on"></div>
+    <div id="gardenBar"><span class="gl">Garden hues</span><div id="gswatches"></div></div>
+    <div id="skillsPane" class="dpane"></div>
+    <div id="memoryPane" class="dpane"></div>
+  </div>
+  <div id="logs"></div>
+
+  <div id="foreignNote"></div>
+  <form id="composer" class="multi">
+    <div id="chips"></div>
+    <div id="imgs"></div>
+    <div class="bar">
+      <button type="button" class="round" id="plus" title="Quick actions"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg></button>
+      <textarea id="input" rows="1" placeholder="What should change?"></textarea>
+      <button type="button" id="agentBtn" title="Local agent"><span id="agentLogo" class="alogo"></span><span id="agentName">Claude Code</span><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4 5 6.5 7.5 4"/></svg></button>
+      <button type="button" id="modelBtn" title="Model & reasoning"><span id="modelName">Opus 5.5</span><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4 5 6.5 7.5 4"/></svg></button>
+      <button type="submit" class="round" id="send" title="Send">
+        <svg id="icoSend" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V3M3.5 7.5 8 3l4.5 4.5"/></svg>
+        <svg id="icoStop" viewBox="0 0 16 16" style="display:none"><rect x="3.5" y="3.5" width="9" height="9" rx="1.5" fill="currentColor"/></svg>
+      </button>
+    </div>
+  </form>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="rough"><feTurbulence type="fractalNoise" baseFrequency=".09" numOctaves="2" seed="3"/><feDisplacementMap in="SourceGraphic" scale="1.4"/></filter><filter id="boil"><feTurbulence type="fractalNoise" baseFrequency=".11" numOctaves="2" seed="1"><animate attributeName="seed" values="1;4;8;12" dur=".48s" calcMode="discrete" repeatCount="indefinite"/></feTurbulence><feDisplacementMap in="SourceGraphic" scale="1.5"/></filter></svg>
+<div id="skillSheetWrap"><div id="skillSheet">
+  <h3>Add a skill</h3>
+  <div id="skTo"><button type="button" data-d="me">Only me</button><button type="button" data-d="file">This file</button></div>
+  <div class="sub" id="skSub"></div>
+  <div id="skDrop">Drop a <b>SKILL.md</b> or a skill folder (.zip) here<br><span style="font-size:11.5px">or click to choose a file</span></div>
+  <input type="file" id="skFile" accept=".md,.zip,text/markdown,application/zip" style="display:none">
+  <div class="or">— or paste it —</div>
+  <textarea id="skText" placeholder="---&#10;name: layer-naming&#10;description: When to use this skill…&#10;---&#10;&#10;Instructions…"></textarea>
+  <div id="skPrev"><span class="si" style="width:26px;height:26px;border-radius:8px;box-shadow:var(--shadow);display:grid;place-items:center">✎</span><div><div class="sn" id="skPrevName" style="font-weight:600"></div><div id="skPrevDesc" style="color:var(--fg2);font-size:12px"></div></div></div>
+  <div id="skErr"></div>
+  <div class="row"><button type="button" id="skCancel">Cancel</button><button type="button" id="skAdd" disabled>Add</button></div>
+</div></div>
+<div id="onboard">
+  <div class="ob-flower" id="obFlower"></div>
+  <h1>Pollie</h1>
+  <p class="sub"><b style="color:var(--fg);font-weight:600">Run your agent in Figma.</b><br>Select layers, say what to change, and Pollie tends the canvas with your local Claude Code or Codex.</p>
+  <ul>
+    <li><span class="ic">✦</span><span><b>Works on your file</b>Uses this file's components, variables and styles.</span></li>
+    <li><span class="ic">⌘</span><span><b>Your own agent</b>Runs Claude Code or Codex already signed in on this Mac.</span></li>
+    <li><span class="ic">⌂</span><span><b>Stays on this Mac</b>Errands are saved locally; nothing goes to a server of ours.</span></li>
+  </ul>
+  <button type="button" id="obBtn">Connect</button>
+  <div id="obStatus"></div>
+</div>
+<button id="mini" title="Open Pollie"><span id="miniIcon"></span><span id="miniDot"></span></button>
+<div id="grip" title="Drag to resize"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><path d="M12 6 6 12M12 9.5 9.5 12"/></svg></div>
+
+<script>
+  var BASE = "http://localhost:3055";
+  var token = null;  // pairing key from the bridge (approved once on this Mac), kept in figma.clientStorage
+  function api(path) { return BASE + path + (path.indexOf("?") < 0 ? "?" : "&") + "t=" + encodeURIComponent(token || ""); }
+  var $ = function (id) { return document.getElementById(id); };
+  var T0 = Date.now(), everConnected = false;
+  setTimeout(function () { setStatus(); }, 2600);
+  var logEl = null, input = $("input"), sendBtn = $("send"), dot = $("dot");
+  var titleEl = $("title"), chipsEl = $("chips");
+  var modelSel = $("model"), effortSel = $("effort");
+
+  var connected = false;
+  var busy = false;
+  var needDesignSystem = true; // send the design-system index once per agent session
+  var current = null;          // assistant text block being streamed
+  var turnStart = 0;
+  var selection = [];
+  var pendingCtx = {};
+  var modelLabel = "";
+  var titled = false;
+  var action = null; // {label, prompt} quick-action tag in the composer
+
+  function post(path, body) {
+    return fetch(api(path), {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify(body || {}),
+    }).then(function (r) { return r.json(); });
+  }
+
+  function scroll() { if (logEl) logEl.scrollTop = logEl.scrollHeight; }
+
+  // tiny Markdown renderer for agent replies: paragraphs, - / 1. lists, # headings, **bold**, `code`, [text](url)
+  function mdInline(s) {
+    s = s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    var codes = [];
+    s = s.replace(/`([^`]+)`/g, function (_, c) { codes.push(c); return "\u0000" + (codes.length - 1) + "\u0000"; });
+    s = s.replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/__([^_]+)__/g, "<b>$1</b>")
+         .replace(/\[([^\]]+)\]\((?:[^)]+)\)/g, "$1");
+    return s.replace(/\u0000(\d+)\u0000/g, function (_, i) { return "<code>" + codes[+i] + "</code>"; });
+  }
+  function mdToHtml(src) {
+    var out = [], list = null, para = [];
+    function flushPara() { if (para.length) { out.push("<p>" + para.join("<br>") + "</p>"); para = []; } }
+    function closeList() { if (list) { out.push("</" + list + ">"); list = null; } }
+    (src || "").replace(/\r/g, "").split("\n").forEach(function (line) {
+      var m;
+      if (/^\s*$/.test(line)) { flushPara(); closeList(); return; }
+      if ((m = line.match(/^\s*[-*•]\s+(.*)$/)) || (m = line.match(/^\s*\d+[.)]\s+(.*)$/))) {
+        var kind = /^\s*\d/.test(line) ? "ol" : "ul";
+        flushPara();
+        if (list !== kind) { closeList(); out.push("<" + kind + ">"); list = kind; }
+        out.push("<li>" + mdInline(m[1]) + "</li>");
+        return;
+      }
+      if ((m = line.match(/^\s*#{1,4}\s+(.*)$/))) { flushPara(); closeList(); out.push('<div class="h">' + mdInline(m[1]) + "</div>"); return; }
+      closeList();
+      para.push(mdInline(line.trim()));
+    });
+    flushPara(); closeList();
+    return out.join("");
+  }
+  function setReply(el, raw) { el._raw = raw; el.innerHTML = mdToHtml(raw); }
+  function add(cls, text) {
+    var e = logEl.querySelector(".empty");
+    if (e) e.remove();
+    var d = document.createElement("div");
+    d.className = "msg " + cls;
+    if (text !== undefined) { if (cls === "assistant") setReply(d, text); else d.textContent = text; }
+    logEl.appendChild(d);
+    if (turnItems && cls !== "user" && cls.indexOf("meta") !== 0) turnItems.push(d);
+    scroll();
+    return d;
+  }
+
+  function addStep(label, detail) {
+    var d = add("step");
+    d.textContent = label + " ";
+    if (detail) {
+      var s = document.createElement("span");
+      s.className = "detail";
+      s.textContent = detail;
+      d.appendChild(s);
+    }
+    return d;
+  }
+
+  // --- one "work" block per turn: live phase + timer + step count, steps folded inside it
+  var turnItems = null, work = null, statusLine = null, statusTimer = null, activity = "Thinking";
+  function makeWork(live) {
+    var w = document.createElement("div");
+    w.className = "msg work" + (live ? "" : " done");
+    w.innerHTML = '<div class="head">' + errandFlower((ctxTab || activeTab) && (ctxTab || activeTab).id) + '<span class="label"></span>' + CHEVRON.replace("<svg ", '<svg class="chev" ') + '</div><div class="group"></div>';
+    w.firstChild.onclick = function () { w.classList.toggle("open"); };
+    w.steps = 0; w.lastStep = null;
+    return w;
+  }
+  function startTurn() {
+    turnItems = [];
+    turnStart = Date.now();
+    activity = "Thinking";
+    edited = false;
+    work = makeWork(true);
+    statusLine = work;            // new messages are inserted after the work block
+    logEl.appendChild(work);
+    tickStatus();
+    var me = ctxTab;
+    clearInterval(statusTimer);
+    statusTimer = setInterval(function () { withTab(me, tickStatus); renderTabs(); }, 1000);
+    scroll();
+  }
+  function tickStatus() {
+    if (!work) return;
+    var secs = Math.floor((Date.now() - turnStart) / 1000);
+    var label = work.querySelector(".label");
+    label.className = "label shimmer";
+    label.textContent = activity + "…" + (secs >= 1 ? " " + secs + "s" : "") + (work.steps ? " · " + work.steps + (work.steps === 1 ? " step" : " steps") : "");
+  }
+  function setActivity(a) { activity = a; tickStatus(); }
+
+  // Add a step inside a work block; identical consecutive steps merge into "×n".
+  function workStep(w, label, detail) {
+    var key = label + "|" + detail;
+    w.steps++;
+    if (w.lastStep && w.lastStep.key === key) {
+      w.lastStep.n++;
+      w.lastStep.el.querySelector(".times").textContent = "×" + w.lastStep.n;
+      return;
+    }
+    var d = document.createElement("div");
+    d.className = "msg step";
+    d.textContent = label + " ";
+    var sp = document.createElement("span"); sp.className = "detail"; sp.textContent = detail || ""; d.appendChild(sp);
+    var tm = document.createElement("span"); tm.className = "times"; d.appendChild(tm);
+    w.querySelector(".group").appendChild(d);
+    w.lastStep = { key: key, n: 1, el: d };
+  }
+  // Text that is followed by more work wasn't the answer: fold it into the steps.
+  function foldText(w, el) { if (w && el && el.parentNode !== w.querySelector(".group")) { w.querySelector(".group").appendChild(el); w.lastStep = null; } }
+
+  function finishWork(w, secs, error) {
+    var label = w.querySelector(".label");
+    label.className = "label";
+    w.classList.add("done");
+    var stopped = error === "Stopped";
+    var took = secs ? (stopped ? "Stopped after " : "Worked ") + secs + "s" : (stopped ? "Stopped" : "Worked");
+    if (!w.steps) { w.remove(); if (stopped) add("meta", took); else if (!error && secs) add("meta", secs + "s"); }
+    else label.textContent = took + " · " + w.steps + (w.steps === 1 ? " step" : " steps");
+    if (error && !stopped) add("meta err", error);
+  }
+  function endTurn(error) {
+    clearInterval(statusTimer); statusTimer = null;
+    var w = work; work = null; statusLine = null; turnItems = null;
+    if (w) finishWork(w, ((Date.now() - turnStart) / 1000).toFixed(1), error);
+    scroll();
+  }
+
+  // Hand-drawn round flower: uneven petals, an open overshooting stroke traced twice like a sketch,
+  // a scribbled centre, and "boiling" lines (the wobble filter re-seeds a few times per second).
+  var PETALS = 7; // number of petals
+  // mode: undefined = animated (agent working); "bloom" = static open flower icon (restore button)
+  function sketchFlower(mode, petalCount, seed0) {
+    var seed = seed0 || 7;
+    function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+    // Outline of the union of n round petals (uneven sizes), sampled by angle, slightly jittered,
+    // and drawn a bit past 360° so the stroke overlaps like a pen line.
+    var petals = [];
+    var n = petalCount || PETALS, k = 5 / n;
+    for (var i = 0; i < n; i++) {
+      var ang = -Math.PI / 2 + i * 2 * Math.PI / n + (rnd() - .5) * 0.25 * k;
+      // more petals => smaller petals further out, so each lobe stays round and clearly separated
+      petals.push({ a: ang, d: 4.6 + (1 - k) * 2.2 + rnd() * 0.6, r: (3.5 + rnd() * 0.9) * (0.35 + 0.65 * k) });
+    }
+    var grow = 1;
+    function outline(jitter, rot, shrink) {
+      var pts = [], steps = 120, over = 0.35;
+      for (var k = 0; k <= steps; k++) {
+        var th = rot + (k / steps) * (2 * Math.PI + over);
+        var best = 0;
+        petals.forEach(function (p) {
+          var cx = p.d * Math.cos(p.a), cy = p.d * Math.sin(p.a), ux = Math.cos(th), uy = Math.sin(th);
+          var proj = cx * ux + cy * uy, disc = p.r * p.r - (cx * cx + cy * cy - proj * proj);
+          if (disc > 0) best = Math.max(best, proj + Math.sqrt(disc));
+        });
+        var r = best * shrink * grow + (rnd() - .5) * jitter;
+        pts.push([12 + r * Math.cos(th), 12 + r * Math.sin(th)]);
+      }
+      var d = "M" + pts[0][0].toFixed(2) + " " + pts[0][1].toFixed(2);
+      for (var j = 1; j < pts.length - 1; j++) {
+        var p1 = pts[j], p2 = pts[j + 1];
+        d += " Q" + p1[0].toFixed(2) + " " + p1[1].toFixed(2) + " " + ((p1[0] + p2[0]) / 2).toFixed(2) + " " + ((p1[1] + p2[1]) / 2).toFixed(2);
+      }
+      return d;
+    }
+    var main = outline(0.25, -Math.PI / 2 + 0.3, 1);
+    var ghost = outline(0.4, -Math.PI / 2 + 0.9, 0.94);
+    var swirl = "M12.4 12.2c-.6.5-1.4-.1-1.1-.8.4-.9 1.8-.8 2.1.2.3 1.1-.8 2-1.9 1.8-1.4-.2-1.9-1.8-1.2-2.9";
+    if (mode) {  // static icon: same hand-drawn lines, no drawing animation
+      return '<svg class="ficon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="' + ghost + '" stroke-width="1.1" opacity=".4"/><path d="' + main + '" stroke-width="1.9"/>' +
+        (mode === "bloom" ? '<path d="' + swirl + '" stroke-width="1.6"/>' : '') + '</svg>';
+    }
+    return '<svg class="flower" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">' +
+      '<g filter="url(#boil)">' +
+      '<path class="draw ghost" pathLength="1" d="' + ghost + '" stroke-width="1"/>' +
+      '<path class="draw" pathLength="1" d="' + main + '" stroke-width="1.7"/>' +
+      '<path class="dot" d="' + swirl + '" stroke-width="1.5"/></g></svg>';
+  }
+  var FLOWER = sketchFlower(), BLOOM = sketchFlower("bloom");
+  var CHEVRON = '<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 2 6.5 5 3.5 8"/></svg>';
+
+  function isForeign(t) { return !!(t && t.file && fileName && t.file !== fileName); }
+  function setStatus() {
+    setTimeout(renderMini, 0);
+    setTimeout(renderTabs, 0);
+    if (ctxTab !== activeTab) return;
+    var foreign = isForeign(activeTab);
+    var note = $("foreignNote");
+    note.className = foreign ? "on" : "";
+    if (foreign) { note.innerHTML = 'This errand belongs to <b></b>. Open that file to continue it.'; note.querySelector("b").textContent = activeTab.file; }
+    input.disabled = foreign;
+    // quiet when fine: the dot only appears when the bridge is unreachable (after a short grace on open)
+    dot.className = "dot" + (!connected && (everConnected || Date.now() - T0 > 2500) ? " off" : "");
+    dot.title = connected ? "" : "Can't reach the local bridge";
+    dot.title = !connected ? "Offline: can't reach the local bridge (localhost:3055)" : (busy ? "Working… · " : "Connected · ") + modelLabel;
+    modelSel.disabled = effortSel.disabled = $("modelBtn").disabled = $("agentBtn").disabled = !connected || busy;
+    $("icoSend").style.display = busy ? "none" : "";
+    $("icoStop").style.display = busy ? "" : "none";
+    sendBtn.title = busy ? "Stop" : "Send";
+    sendBtn.disabled = !connected || (!busy && (foreign || (!input.value.trim() && !action && !(pendingImages && pendingImages.length))));
+    if (!connected || busy || !action) input.placeholder = !connected ? "Offline — waiting for bridge…" : busy ? "Working…" : (titled ? "Follow up…" : "What should change?");
+    if (foreign) input.placeholder = "Open that file to continue this errand";
+  }
+
+  // --- comments chip: unresolved comments pinned inside the selection, or on this page
+  var fileKey = null, fileName = null, commentInfo = null, pendingScope = {}, scopeSeq = 0, commentTimer = null;
+  function refreshComments() {
+    clearTimeout(commentTimer);
+    commentTimer = setTimeout(function () {
+      if (!connected) return;
+      fetch(api("/comment_pins?fileKey=" + encodeURIComponent(fileKey || "") + "&fileName=" + encodeURIComponent(fileName || ""))).then(function (r) { return r.json(); }).then(function (d) {
+        if (!d.nodeIds || !d.nodeIds.length) { commentInfo = null; renderSelection(); return; }
+        var id = ++scopeSeq;
+        pendingScope[id] = function (res) { res.threads = d.threads || []; commentInfo = res; renderSelection(); if ($("commentsMenu").classList.contains("open")) renderCommentList(); };
+        parent.postMessage({ pluginMessage: { type: "comment-scope", reqId: id, nodeIds: d.nodeIds } }, "*");
+      }).catch(function () {});
+    }, 250);
+  }
+  var COMMENT_ACTION = {
+    label: "Address comments",
+    prompt: "Go through the unresolved comments pinned to the selection (or to this page if nothing is selected), make the changes they ask for, and afterwards list any comment you did not act on and why",
+  };
+
+  function scopedThreads() {
+    if (!commentInfo || !commentInfo.threads) return [];
+    var ids = selection.length ? commentInfo.selectionIds : commentInfo.pageIds;
+    var set = {}; (ids || []).forEach(function (i) { set[i] = true; });
+    return commentInfo.threads.filter(function (t) { return t.node_id && set[t.node_id]; });
+  }
+  function ago(iso) {
+    var m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+    if (m < 60) return m + "m"; if (m < 1440) return Math.round(m / 60) + "h"; return Math.round(m / 1440) + "d";
+  }
+  function renderCommentList() {
+    var box = $("commentsMenu"), list = scopedThreads();
+    box.innerHTML = "";
+    var head = document.createElement("div"); head.className = "chead";
+    head.innerHTML = "<span></span>";
+    head.firstChild.textContent = list.length + (list.length === 1 ? " comment" : " comments") + (selection.length ? " in selection" : " on this page");
+    var all = document.createElement("button"); all.className = "call"; all.textContent = "Address all";
+    all.onclick = function () { closeMenus(); action = COMMENT_ACTION; renderSelection(); setStatus(); input.focus(); };
+    head.appendChild(all); box.appendChild(head);
+    list.forEach(function (t) {
+      var b = document.createElement("button"); b.className = "citem";
+      var top = document.createElement("div"); top.className = "cmeta";
+      top.textContent = (t.author || "Someone") + " · " + ago(t.at) + (commentInfo.names && commentInfo.names[t.node_id] ? " · " + commentInfo.names[t.node_id] : "");
+      var msg = document.createElement("div"); msg.className = "cmsg"; msg.textContent = t.message;
+      b.appendChild(top); b.appendChild(msg);
+      if (t.replies && t.replies.length) { var r = document.createElement("div"); r.className = "cmeta"; r.textContent = t.replies.length + (t.replies.length === 1 ? " reply" : " replies"); b.appendChild(r); }
+      b.onclick = function () {
+        closeMenus();
+        parent.postMessage({ pluginMessage: { type: "focus-node", id: t.node_id } }, "*");
+        var thread = "\"" + t.message + "\" — " + (t.author || "someone") + (t.replies && t.replies.length ? "\nReplies:\n" + t.replies.map(function (x) { return "- " + (x.author || "") + ": " + x.message; }).join("\n") : "");
+        action = {
+          label: "💬 " + (t.message.length > 28 ? t.message.slice(0, 28) + "…" : t.message),
+          prompt: "Address this comment (id " + t.id + "), pinned to layer " + t.node_id + ":\n" + thread + "\nMake the change it asks for on that layer. If the comment is unclear or conflicts with the team rules, say so instead of guessing",
+        };
+        renderSelection(); setStatus(); input.focus();
+      };
+      box.appendChild(b);
+    });
+    if (!list.length) { var e = document.createElement("div"); e.className = "hint"; e.textContent = "No unresolved comments here"; box.appendChild(e); }
+  }
+
+  function renderSelection() {
+    chipsEl.innerHTML = "";
+    if (action) {
+      var a = document.createElement("span");
+      a.className = "chip action";
+      a.textContent = action.label;
+      var x = document.createElement("button");
+      x.type = "button"; x.textContent = "×"; x.title = "Remove";
+      x.onclick = function () { action = null; renderSelection(); setStatus(); input.focus(); };
+      a.appendChild(x);
+      chipsEl.appendChild(a);
+    }
+    var count = commentInfo ? (selection.length ? commentInfo.onSelection : commentInfo.onPage) : 0;
+    if (count && !action) {
+      var cc = document.createElement("span");
+      cc.className = "chip comment";
+      cc.textContent = "💬 " + count + (count === 1 ? " comment" : " comments") + (selection.length ? "" : " on this page");
+      cc.title = "Unresolved comments — click to have the agent address them";
+      cc.onclick = function (e) { e.stopPropagation(); renderCommentList(); toggleMenu("commentsMenu"); };
+      chipsEl.appendChild(cc);
+    }
+    if (!selection.length) return;
+    selection.slice(0, 5).forEach(function (n) {
+      var c = document.createElement("span");
+      c.className = "chip";
+      c.textContent = "▢ " + n.name;
+      c.title = n.type + " · " + n.id;
+      chipsEl.appendChild(c);
+    });
+    if (selection.length > 5) {
+      var more = document.createElement("span");
+      more.className = "chip";
+      more.textContent = "+" + (selection.length - 5);
+      chipsEl.appendChild(more);
+    }
+  }
+
+  // --- settings
+  // local agents: Claude Code models are built in; Codex models come from the bridge (the CLI's own catalog)
+  var lastCfg = null, codexLoaded = false, defaultCfg = null;
+  var CLAUDE_LOGO = '<svg viewBox="0 0 24 24"><path fill="#D97757" d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z"/></svg>';  // official Claude mark (simple-icons)
+  function logoHtml(k) { return k === "codex" ? '<span class="alogo codex"></span>' : '<span class="alogo">' + CLAUDE_LOGO + '</span>'; }
+  var AGENTS = {
+    claude: { name: "Claude Code", models: [{ id: "opus", name: "Opus 5.5" }, { id: "sonnet", name: "Sonnet 5.5" },
+                                            { id: "haiku", name: "Haiku 5.5" }, { id: "claude-fable-5-2", name: "Fable 5.2" }] },
+    codex: { name: "Codex", models: [] }
+  };
+  function engineOf(model) { return AGENTS.codex.models.some(function (m) { return m.id === model; }) ? "codex" : "claude"; }
+  var shownEngine = null;
+  function fillModels(eng) {
+    if (shownEngine === eng && modelSel.options.length) return;
+    shownEngine = eng;
+    modelSel.innerHTML = "";
+    AGENTS[eng].models.forEach(function (m) { var o = document.createElement("option"); o.value = m.id; o.textContent = m.name; modelSel.appendChild(o); });
+  }
+  fillModels("claude");
+  function renderAgentMenu() {
+    var cur = lastCfg ? engineOf(lastCfg.model) : "claude", menu = $("agentMenu");
+    menu.innerHTML = "";
+    ["claude", "codex"].forEach(function (k) {
+      if (!AGENTS[k].models.length) return;
+      var b = document.createElement("button"); b.type = "button"; b.className = "item";
+      b.innerHTML = logoHtml(k) + '<span></span><span class="ck">' + (k === cur ? "✓" : "") + '</span>';
+      b.children[1].textContent = AGENTS[k].name;
+      b.onclick = function () { closeMenus(); pickAgent(k); };
+      menu.appendChild(b);
+    });
+  }
+  function pickAgent(k) {
+    if (!lastCfg || engineOf(lastCfg.model) === k) return;
+    var last = lastCfg["last_" + k], list = AGENTS[k].models;
+    var m = list.some(function (x) { return x.id === last; }) ? last : list[0].id;
+    var name = list.filter(function (x) { return x.id === m; })[0].name;
+    changeConfig({ model: m }, "Switched to " + AGENTS[k].name + " · " + name);
+  }
+  function loadModels() {
+    if (codexLoaded) return;
+    fetch(api("/models")).then(function (r) { return r.json(); }).then(function (d) {
+      if (codexLoaded) return;
+      codexLoaded = true;
+      AGENTS.codex.models = d.codex || [];
+      shownEngine = null;
+      defaultCfg = d.config || null;
+      applyConfig((activeTab && activeTab.s && activeTab.s.config) || lastCfg || d.config);
+    }).catch(function () {});
+  }
+  function applyConfig(cfg) {
+    if (!cfg) return;
+    lastCfg = cfg;
+    fillModels(engineOf(cfg.model));
+    if (cfg.model) modelSel.value = cfg.model;
+    if (cfg.effort) effortSel.value = cfg.effort;
+    renderModelBtn();
+  }
+  function renderModelBtn() {
+    var eng = lastCfg ? engineOf(lastCfg.model) : "claude";
+    $("agentName").textContent = AGENTS[eng].name;
+    $("agentLogo").outerHTML = logoHtml(eng).replace('class="alogo', 'id="agentLogo" class="alogo');
+    $("agentBtn").style.display = AGENTS.codex.models.length ? "" : "none";  // only one local agent: no picker
+    var m = modelSel.options[modelSel.selectedIndex];
+    var eff = effortSel.value;
+    $("modelName").textContent = (m ? m.text : "") + (eff && eff !== "medium" ? " · " + effortSel.options[effortSel.selectedIndex].text : "");
+  }
+  function changeConfig(body, note) {
+    body.agent = activeTab.id;
+    var tab = activeTab;
+    post("/config", body).then(function (r) {
+      if (tab.s) tab.s.config = r.config;
+      if (r.error === "busy") { add("meta err", "Busy — switch after this turn finishes"); return; }
+      if (r.error === "engine") {  // Claude Code <-> Codex can't share a chat: continue in a new one
+        applyConfig(r.config);
+        newConversation().then(function () { changeConfig(body.model ? { model: body.model } : body, note + " · new errand"); });
+        return;
+      }
+      applyConfig(r.config);
+      add("meta", note);
+    }).catch(function (e) { add("meta err", "Switch failed: " + e); });
+  }
+  modelSel.addEventListener("change", renderModelBtn);
+  effortSel.addEventListener("change", renderModelBtn);
+  modelSel.onchange = function () {
+    changeConfig({ model: modelSel.value }, "Switched to " + modelSel.options[modelSel.selectedIndex].text);
+  };
+  effortSel.onchange = function () {
+    changeConfig({ effort: effortSel.value }, "Reasoning set to " + effortSel.options[effortSel.selectedIndex].text);
+  };
+
+  // --- menus
+  function closeMenus() { ["actions", "modelMenu", "agentMenu", "commentsMenu"].forEach(function (id) { $(id).classList.remove("open"); }); }
+  function toggleMenu(id) {
+    var o = $(id).classList.contains("open"); closeMenus();
+    if (o) return;
+    $(id).style.bottom = ($("composer").offsetHeight + 16) + "px"; // sit just above the composer
+    $(id).classList.add("open");
+  }
+  // composer menus are small popovers sitting right above their button (left- or right-aligned to it)
+  function anchorMenu(menuId, btnId, side) {
+    var m = $(menuId), r = $(btnId).getBoundingClientRect();
+    m.style.bottom = (window.innerHeight - r.top + 6) + "px";
+    if (side === "right") { m.style.right = Math.max(8, window.innerWidth - r.right) + "px"; m.style.left = "auto"; }
+    else { m.style.left = Math.max(8, r.left) + "px"; m.style.right = "auto"; }
+  }
+  $("plus").onclick = function (e) { e.stopPropagation(); toggleMenu("actions"); anchorMenu("actions", "plus", "left"); };
+  $("modelBtn").onclick = function (e) { e.stopPropagation(); toggleMenu("modelMenu"); anchorMenu("modelMenu", "modelBtn", "right"); };
+  $("agentBtn").onclick = function (e) { e.stopPropagation(); renderAgentMenu(); toggleMenu("agentMenu"); anchorMenu("agentMenu", "agentBtn", "left"); };
+  document.addEventListener("click", function (e) { if (!e.target.closest(".menu")) closeMenus(); });
+
+  document.querySelectorAll("#actions .item:not(.attach)").forEach(function (b) {
+    b.onclick = function () {
+      closeMenus();
+      action = { label: b.textContent, prompt: b.getAttribute("data-q") };
+      renderSelection(); setStatus();
+      input.placeholder = action.label === "New screen" ? "Describe the screen…" : "Add details (optional), press Enter";
+      if (action.label === "Connect as flow" && selection.length < 2) input.placeholder = "Select at least 2 screens to connect";
+      if ((action.label === "Apply design system" || action.label === "Rename layers") && !selection.length) input.placeholder = "Nothing selected — this will cover the whole page";
+      input.focus();
+    };
+  });
+
+
+  // --- context from the main thread
+  var ctxSeq = 0;
+  function getContext(withDS) {
+    return new Promise(function (resolve) {
+      var id = ++ctxSeq;
+      pendingCtx[id] = resolve;
+      parent.postMessage({ pluginMessage: { type: "get-context", reqId: id, withDesignSystem: withDS } }, "*");
+      setTimeout(function () {  // Figma never answered: send without the snapshot rather than hang
+        if (pendingCtx[id]) { delete pendingCtx[id]; resolve({ file: fileName, fileKey: fileKey, selection: [], contextError: "timeout" }); }
+      }, 20000);
+    });
+  }
+
+  // --- exec requests from the agent (bridge -> UI -> main -> UI -> bridge)
+  var pendingExec = {};
+  function execInFigma(id, op, args) {
+    pendingExec[id] = true;
+    parent.postMessage({ pluginMessage: { type: "exec", id: id, op: op, args: args } }, "*");
+  }
+
+  window.onmessage = function (ev) {
+    var m = ev.data && ev.data.pluginMessage;
+    if (!m) return;
+    if (m.type === "onboarded") {
+      if (m.token && (obState === null || (obState === "show" && !obConnecting))) {  // also a late answer
+        token = m.token; obState = "done"; $("onboard").classList.remove("on"); startConnecting();
+      } else if (obState === null) showOnboard();
+    }
+    if (m.type === "selection") { selection = m.items; if (m.fileKey !== undefined) fileKey = m.fileKey; if (m.file) fileName = m.file; renderSelection(); refreshComments(); }
+    if (m.type === "comment-scope" && pendingScope[m.reqId]) { pendingScope[m.reqId](m); delete pendingScope[m.reqId]; }
+    if (m.type === "pref" && m.key === "gardenColors") setGarden(m.value, false);
+    if (m.type === "fs" && pendingFs[m.reqId]) { pendingFs[m.reqId](m); delete pendingFs[m.reqId]; }
+    if (m.type === "context" && pendingCtx[m.reqId]) { pendingCtx[m.reqId](m.context); delete pendingCtx[m.reqId]; }
+    if (m.type === "exec-result" && pendingExec[m.id]) {
+      delete pendingExec[m.id];
+      post("/result", { id: m.id, ok: m.ok, data: m.data, error: m.error }).catch(function () {});
+
+    }
+  };
+
+  // --- send
+  // ---------- reference images (pasted, dropped or picked): sent to the agent with the next message
+  var pendingImages = [];  // {mime, data (base64), thumb (data URL)}
+  function scaleImage(img, max, mime, q) {
+    var k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+    var c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(img.naturalWidth * k)); c.height = Math.max(1, Math.round(img.naturalHeight * k));
+    var g = c.getContext("2d");
+    if (mime === "image/jpeg") { g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); }
+    g.drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL(mime, q);
+  }
+  function addImageFile(f) {
+    if (!f || !/^image\/(png|jpeg|webp|gif)$/.test(f.type)) return;
+    if (pendingImages.length >= 4) { add("meta err", "Attach at most 4 images."); return; }
+    if (f.size > 5 * 1024 * 1024) { add("meta err", "“" + (f.name || "image") + "” is larger than 5 MB."); return; }
+    var r = new FileReader();
+    r.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        var big = Math.max(img.naturalWidth, img.naturalHeight) > 1568 || f.size > 1.5 * 1024 * 1024;
+        // big images are scaled down (models look at ~1.5k px anyway); GIFs keep their first frame as PNG
+        var url = big || f.type === "image/gif" ? scaleImage(img, 1568, f.type === "image/jpeg" ? "image/jpeg" : "image/png", .9) : String(r.result);
+        var mime = url.slice(5, url.indexOf(";"));
+        if (pendingImages.length >= 4) return;
+        pendingImages.push({ mime: mime, data: url.split(",")[1], thumb: scaleImage(img, 112, "image/jpeg", .7) });
+        renderImages(); setStatus();
+      };
+      img.onerror = function () { add("meta err", "That image couldn't be read."); };
+      img.src = String(r.result);
+    };
+    r.readAsDataURL(f);
+  }
+  function renderImages() {
+    var box = $("imgs"); box.innerHTML = "";
+    box.classList.toggle("on", pendingImages.length > 0);
+    pendingImages.forEach(function (im, i) {
+      var d = document.createElement("div"); d.className = "im"; d.style.backgroundImage = "url(" + im.thumb + ")";
+      d.innerHTML = '<button type="button" title="Remove">✕</button>';
+      d.querySelector("button").onclick = function () { pendingImages.splice(i, 1); renderImages(); setStatus(); };
+      box.appendChild(d);
+    });
+  }
+  function userImages(u, thumbs) {
+    if (!thumbs || !thumbs.length) return;
+    var w = document.createElement("div"); w.className = "uimgs";
+    thumbs.forEach(function (t) { var im = document.createElement("img"); im.src = t; w.appendChild(im); });
+    u.appendChild(w);
+  }
+  document.querySelector("#actions .attach").onclick = function () { closeMenus(); $("imgFile").click(); };
+  $("imgFile").onchange = function () { Array.prototype.forEach.call(this.files, addImageFile); this.value = ""; };
+  input.addEventListener("paste", function (e) {
+    var files = Array.prototype.filter.call((e.clipboardData && e.clipboardData.files) || [], function (f) { return /^image\//.test(f.type); });
+    if (files.length) { e.preventDefault(); files.forEach(addImageFile); }
+  });
+  $("composer").addEventListener("dragover", function (e) { if (e.dataTransfer && Array.prototype.some.call(e.dataTransfer.types, function (t) { return t === "Files"; })) { e.preventDefault(); this.classList.add("drop"); } });
+  $("composer").addEventListener("dragleave", function () { this.classList.remove("drop"); });
+  $("composer").addEventListener("drop", function (e) {
+    this.classList.remove("drop");
+    if (!e.dataTransfer || !e.dataTransfer.files.length) return;
+    e.preventDefault(); Array.prototype.forEach.call(e.dataTransfer.files, addImageFile);
+  });
+
+  function send(text) {
+    text = text.trim();
+    var act = action;
+    var imgs = pendingImages.slice();
+    if ((!text && !act && !imgs.length) || busy || !connected || !activeTab || isForeign(activeTab)) return;
+    pendingImages = []; renderImages();
+    var display = act ? act.label + (text ? "：" + text : "") : text;
+    var prompt = act ? act.prompt + (text ? ". Additional requirements: " + text : "") : text;
+    action = null; renderSelection();
+    if (!titled) { titleEl.textContent = display; titled = true; }
+    busy = true; setStatus();
+    var u = add("user", text);
+    if (act) {
+      var tg = document.createElement("div");
+      tg.className = "tag";
+      tg.textContent = act.label;
+      u.insertBefore(tg, u.firstChild);
+      if (!text) u.lastChild.textContent = "";
+    }
+    userImages(u, imgs.map(function (im) { return im.thumb; }));
+    if (selection.length) {
+      var c = document.createElement("div");
+      c.className = "ctx";
+      c.textContent = selection.length === 1 ? "▢ " + selection[0].name : "▢ " + selection.length + " selected";
+      u.appendChild(c);
+    }
+    current = null;
+    startTurn();
+    parent.postMessage({ pluginMessage: { type: "turn-boundary" } }, "*");
+    activeTab.title = display;
+    var tab = activeTab, withDS = needDesignSystem;
+    getContext(withDS).then(function (ctx) {
+      withTab(tab, function () { needDesignSystem = false; });
+      return post("/prompt", { agent: tab.id, clientId: clientId, text: prompt || "Use the attached image as reference.", display: text, tag: act ? act.label : null, context: ctx,
+                               images: imgs.length ? imgs.map(function (im) { return { mime: im.mime, data: im.data }; }) : undefined,
+                               thumbs: imgs.length ? imgs.map(function (im) { return im.thumb; }) : undefined });
+    }).then(function (r) {
+      withTab(tab, function () {
+        if (r && r.conversationId) currentConvId = r.conversationId;
+        if (r && r.error) { endTurn(r.error === "busy" ? "This errand is still running" : r.error); busy = false; setStatus(); }
+      });
+    }).catch(function (e) {
+      withTab(tab, function () { endTurn("Send failed: " + e); busy = false; setStatus(); });
+    });
+  }
+
+  $("composer").onsubmit = function (e) {
+    e.preventDefault();
+    if (busy) { post("/interrupt", { agent: activeTab.id }); return; }
+    var t = input.value; input.value = ""; autosize();
+    send(t);
+  };
+  input.addEventListener("keydown", function (e) {
+    if (e.key === "Backspace" && !input.value && action) { action = null; renderSelection(); setStatus(); return; }
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      $("composer").requestSubmit();
+    }
+  });
+  var composerEl = $("composer");
+  function autosize() {
+    input.style.height = "auto";
+    input.style.height = Math.min(input.scrollHeight, 150) + "px";
+  }
+  input.addEventListener("input", function () { autosize(); setStatus(); });
+
+  // --- event stream from the bridge
+  var SKILL_NAME = { "design-system": "Design system guide", "screen-design": "Screen design guide", "flows-prototype": "Flows & prototype guide", "figma-api": "Figma API guide" };
+  var edited = false; // has this turn changed the canvas yet?
+  // Plain-language step labels: [label, detail]
+  function friendly(name, summary, kind) {
+    switch (name) {
+      case "Skill": return ["Read", SKILL_NAME[summary] || summary || "guide"];
+      case "figma_read": return ["Inspected", "layers"];
+      case "figma_design_system": return ["Checked", "design system"];
+      case "figma_page_overview": return ["Scanned", "the page"];
+      case "figma_annotations": return ["Read", "annotations"];
+      case "figma_comments": return ["Read", "comments"];
+      case "figma_screenshot": return edited ? ["Checked", "the result"] : ["Looked at", "the canvas"];
+      case "figma_execute": return summary ? [summary, ""] : [kind === "edit" ? "Edited the canvas" : "Inspected the file", ""];
+      default: return [name, summary || ""];
+    }
+  }
+  // Coarse phase shown in the live line
+  function phase(name, kind) {
+    if (name === "Skill") return "Reading guidelines";
+    if (name === "figma_execute" && kind === "edit") return "Editing the canvas";
+    if (name === "figma_screenshot" && edited) return "Checking the result";
+    return edited ? "Editing the canvas" : "Understanding your file";
+  }
+
+  // --- conversation history
+  var currentConvId = null, restored = false;
+  function fmtTime(ms) {
+    var d = new Date(ms), now = new Date();
+    var hm = ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
+    if (d.toDateString() === now.toDateString()) return "Today " + hm;
+    var y = new Date(now); y.setDate(now.getDate() - 1);
+    if (d.toDateString() === y.toDateString()) return "Yesterday " + hm;
+    return (d.getMonth() + 1) + "/" + d.getDate() + " " + hm;
+  }
+  function groupOf(ms) {
+    var days = (new Date().setHours(0, 0, 0, 0) - new Date(ms).setHours(0, 0, 0, 0)) / 864e5;
+    return days <= 0 ? "Today" : days === 1 ? "Yesterday" : days < 7 ? "Previous 7 days" : "Older";
+  }
+  var listCache = [];
+
+  // ---------- drawer tabs
+  var drawerTab = "chats";
+  function setDrawerTab(t) {
+    drawerTab = t;
+    Array.prototype.forEach.call($("dseg").children, function (b) { b.classList.toggle("on", b.dataset.t === t); });
+    $("hlist").classList.toggle("on", t === "chats");
+    $("history").classList.toggle("tab-chats", t === "chats");
+    $("skillsPane").classList.toggle("on", t === "skills");
+    $("memoryPane").classList.toggle("on", t === "memory");
+    $("newFromList").style.visibility = t === "chats" ? "" : "hidden";
+    document.querySelector("#history .hhead b").textContent = t === "chats" ? "Errands" : t === "skills" ? "Skills" : "Memory";
+    if (t === "memory") loadMemory();
+    if (t === "skills" && window.loadSkills) loadSkills();
+  }
+  Array.prototype.forEach.call($("dseg").children, function (b) { b.onclick = function () { setDrawerTab(b.dataset.t); }; });
+
+  // ---------- Pollie data kept in the Figma file (this file's memory + skills; shared, follows the file)
+  var fsSeq = 0, pendingFs = {}, lastFs = { canEdit: true };
+  function fsCall(msg) {
+    return new Promise(function (resolve) {
+      var id = ++fsSeq; pendingFs[id] = resolve; msg.reqId = id;
+      parent.postMessage({ pluginMessage: msg }, "*");
+      setTimeout(function () { if (pendingFs[id]) { delete pendingFs[id]; resolve({ memory: [], skills: [], canEdit: false, error: "Figma didn't answer." }); } }, 10000);
+    }).then(function (r) { lastFs = r; return r; });
+  }
+  function fsEdit(fields) { fields.type = "fs-edit"; return fsCall(fields); }
+  function paneNote(pane, text) { var e = document.createElement("div"); e.className = "mempty err"; e.textContent = text; pane.insertBefore(e, pane.firstChild); }
+
+  // ---------- memory pane
+  function loadMemory(note) {
+    Promise.all([
+      fetch(api("/memory?fileKey=" + encodeURIComponent(fileKey || "") + "&file=" + encodeURIComponent(fileName || ""))).then(function (r) { return r.json(); }),
+      fsCall({ type: "fs-get" })
+    ]).then(function (r) {
+      var local = r[0], fs = r[1], legacy = local.file || [];
+      if (note) fs.note = note;
+      paintMemory(local, fs, legacy);
+    }).catch(function () { $("memoryPane").innerHTML = '<div class="mempty">Failed to load memory.</div>'; });
+  }
+  function memGroup(pane, title, tag, tip, o) {
+    var g = groupHead(pane, title, tag, tip, "Add", o.add ? function () {} : null), sb = g;
+    var addRow = null;
+    if (o.add) g.querySelector(".add").onclick = function () {
+      if (addRow) { addRow.querySelector("input").focus(); return; }
+      addRow = document.createElement("div"); addRow.className = "madd";
+      addRow.innerHTML = '<input placeholder="e.g. Use 8px spacing steps">';
+      sb.after(addRow);
+      var inp = addRow.querySelector("input"); inp.focus();
+      inp.onkeydown = function (e) {
+        if (e.key === "Escape") { addRow.remove(); addRow = null; if (!o.items.length) loadMemory(); }
+        if (e.key === "Enter" && inp.value.trim() && !e.isComposing) o.add(inp.value.trim());
+      };
+    };
+    if (!o.items.length) emptyTile(pane, g, "＋", o.empty[0], o.empty[1], o.add ? function (b) { b.remove(); g.querySelector(".add").onclick(); } : null);
+    o.items.forEach(function (it) {
+      var row = document.createElement("div"); row.className = "mitem";
+      row.innerHTML = '<span class="bul"></span><div class="tx"></div>' + (o.update ? '<div class="acts"><button title="Edit">✎</button><button title="Delete">✕</button></div>' : "");
+      var tx = row.querySelector(".tx");
+      function paint() {
+        tx.textContent = it.text;
+        var bits = [];
+        if (it.by) bits.push("Added by " + it.by);
+        if (it.src && it.src !== "Added by you") bits.push("From “" + it.src + "”");
+        if (bits.length) { var s = document.createElement("span"); s.className = "src"; s.textContent = bits.join(" · "); tx.appendChild(s); }
+      }
+      paint();
+      if (o.update) {
+        var bs = row.querySelectorAll(".acts button");
+        bs[0].onclick = function () {
+          tx.textContent = it.text; tx.contentEditable = "true"; tx.focus();
+          tx.onkeydown = function (e) {
+            if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); tx.blur(); }
+            if (e.key === "Escape") { tx.textContent = it.text; tx.blur(); }
+          };
+          tx.onblur = function () {
+            tx.contentEditable = "false";
+            var v = tx.textContent.trim();
+            if (v && v !== it.text) o.update(it, v); else paint();
+          };
+        };
+        bs[1].onclick = function () { o.del(it); };
+      }
+      pane.appendChild(row);
+    });
+  }
+  function paintMemory(local, fs, legacy) {
+    var pane = $("memoryPane"); pane.innerHTML = "";
+    memGroup(pane, "About you", "", "Only you. Kept on this Mac.", {
+      items: local.you || [], empty: ["Add something about you", "Or say “remember …” to Pollie"],
+      add: function (t) { post("/memory/add", { scope: "you", text: t, src: "" }).then(loadMemory); },
+      update: function (it, t) { post("/memory/update", { id: it.id, text: t }).then(loadMemory); },
+      del: function (it) { post("/memory/delete", { id: it.id }).then(loadMemory); }
+    });
+    var edit = fs.canEdit && !fs.error;
+    function after(r) { loadMemory(r && r.error); }
+    function isMac(it) { return (legacy || []).indexOf(it) >= 0; }  // not yet moved into the file: still edited on the Mac
+    memGroup(pane, "This file", edit ? "Shared" : "View only",
+      edit ? "Saved in " + (fileName || "this file") + ". Everyone using Pollie on it gets these, on any computer." : "You need edit access to change this file's memory.", {
+      items: (fs.memory || []).concat(legacy || []), empty: ["Add something about this file", edit ? "Everyone using Pollie on this file gets it" : "Nothing about this file yet."],
+      add: edit ? function (t) { fsEdit({ op: "mem-add", text: t, src: "" }).then(after); } : null,
+      update: edit ? function (it, t) { if (isMac(it)) post("/memory/update", { id: it.id, text: t }).then(loadMemory); else fsEdit({ op: "mem-update", id: it.id, text: t }).then(after); } : null,
+      del: function (it) { if (isMac(it)) post("/memory/delete", { id: it.id }).then(loadMemory); else fsEdit({ op: "mem-delete", id: it.id }).then(after); }
+    });
+    if ((legacy || []).length) moveBanner(pane, legacy, !!(edit && fileKey));
+    if (fs.error || fs.note) paneNote(pane, fs.error || fs.note);
+  }
+  // older versions kept this file's memory only on the Mac; moving it into the (shared) file is the user's call
+  function moveBanner(pane, legacy, canMove) {
+    var b = document.createElement("div"); b.className = "mmove";
+    b.innerHTML = "<span></span>" + (canMove ? '<button type="button">Move into file</button>' : "");
+    b.firstChild.textContent = legacy.length + (legacy.length === 1 ? " note is" : " notes are") + " only on this Mac (from an older version)." + (canMove ? " Moving shares them with everyone using Pollie on this file." : "");
+    if (canMove) b.querySelector("button").onclick = function () {
+      this.disabled = true;
+      fsEdit({ op: "mem-import", items: legacy }).then(function (fs2) {
+        var moved = (!fs2.error && fs2.result && fs2.result.moved) || [];
+        return Promise.all(moved.map(function (id) { return post("/memory/delete", { id: id }); })).then(function () { loadMemory(fs2.error); });
+      });
+    };
+    pane.appendChild(b);
+  }
+  function openMemoryTab() { openHistory(); setDrawerTab("memory"); }
+
+  // ---------- memory chips in the transcript
+  function memoryChip(ev, live) {
+    var scopeTxt = ev.scope === "file" ? " in this file" : "";
+    var doneTxt = ev.scope === "file" ? "✓ Saved to this file · edit in Memory" : "✓ Remembered · edit in Memory";
+    if (ev.state === "saved" || ev.accepted) {
+      var n = document.createElement("div"); n.className = "memnote";
+      n.textContent = doneTxt;
+      n.onclick = openMemoryTab;
+      logEl.appendChild(n); scroll(); return;
+    }
+    var c = document.createElement("div"); c.className = "memchip";
+    c.innerHTML = '<span>💡</span><span class="q"></span><button>Remember</button><button class="no">No</button>';
+    c.querySelector(".q").textContent = "Remember “" + ev.text + "”" + scopeTxt + "?";
+    var bs = c.querySelectorAll("button");
+    bs[0].onclick = function () {
+      var src = (activeTab && activeTab.title) || "";
+      var save = ev.scope === "file"
+        ? fsEdit({ op: "mem-add", text: ev.text, src: src }).then(function (r) { return !r.error || r.error; })
+        : post("/memory/add", { scope: "you", text: ev.text, src: src }).then(function () { return true; });
+      save.then(function (ok) {
+        if (ok !== true) { c.querySelector(".q").textContent = ok; return; }
+        c.className = "memnote"; c.textContent = doneTxt; c.onclick = openMemoryTab;
+      });
+    };
+    bs[1].onclick = function () { c.remove(); };
+    logEl.appendChild(c); scroll();
+  }
+
+  // ---------- ask_user cards
+  function askCard(card, live) {
+    var el = document.createElement("div"); el.className = "askcard"; el.dataset.ask = card.id;
+    var q = document.createElement("div"); q.className = "q"; q.textContent = card.question; el.appendChild(q);
+    var chosen = {}, answered = !!card.answer, expired = !live || !!card.expired;
+    var go = null;
+    card.options.forEach(function (o) {
+      var b = document.createElement("button"); b.type = "button"; b.className = "opt";
+      b.innerHTML = "<span><span class=\"ol\"></span><span class=\"od\"></span></span>" + (o.nodeId ? '<span class="peek">◎ on canvas</span>' : "");
+      b.querySelector(".ol").textContent = o.label;
+      if (o.detail) b.querySelector(".od").textContent = o.detail; else b.querySelector(".od").remove();
+      if (o.nodeId) b.onmouseenter = function () { parent.postMessage({ pluginMessage: { type: "peek-node", id: o.nodeId } }, "*"); };
+      if (answered && card.answer.choices && card.answer.choices.indexOf(o.label) >= 0) b.classList.add("sel");
+      b.onclick = function () {
+        if (el.classList.contains("done")) return;
+        if (card.multi) { chosen[o.label] = !chosen[o.label]; b.classList.toggle("sel", chosen[o.label]); go.disabled = !Object.keys(chosen).some(function (k) { return chosen[k]; }) && !oi.value.trim(); return; }
+        submit([o.label], "");
+      };
+      el.appendChild(b);
+    });
+    var other = document.createElement("div"); other.className = "other";
+    other.innerHTML = '<input placeholder="Other…"><button type="button" class="go">' + (card.multi ? "Done" : "Send") + "</button>";
+    var oi = other.querySelector("input"); go = other.querySelector(".go");
+    go.disabled = true;
+    oi.oninput = function () { go.disabled = !oi.value.trim() && !(card.multi && Object.keys(chosen).some(function (k) { return chosen[k]; })); };
+    oi.onkeydown = function (e) { if (e.key === "Enter" && !e.isComposing && !go.disabled) go.click(); };
+    go.onclick = function () { submit(Object.keys(chosen).filter(function (k) { return chosen[k]; }), oi.value.trim()); };
+    el.appendChild(other);
+    var st = document.createElement("div"); st.className = "st"; el.appendChild(st);
+    function lock(text) {
+      el.classList.add("done");
+      Array.prototype.forEach.call(el.querySelectorAll("button, input"), function (x) { x.disabled = true; });
+      other.style.display = "none";
+      st.textContent = text;
+    }
+    function asMessage(choices, otherText) {  // the agent isn't waiting any more: answer as a new message
+      var t = (choices.length ? choices.join(", ") : "") + (otherText ? (choices.length ? " — " : "") + otherText : "");
+      if (!t) return;
+      lock("Sent as a new message");
+      input.value = t; send(input.value); input.value = "";
+    }
+    function submit(choices, otherText) {
+      if (!choices.length && !otherText) return;
+      if (expired || el.dataset.expired) return asMessage(choices, otherText);
+      post("/answer", { id: card.id, choices: choices, other: otherText }).then(function (r) {
+        if (r && r.ok) {
+          Array.prototype.forEach.call(el.querySelectorAll(".opt"), function (b) { b.classList.toggle("sel", choices.indexOf(b.querySelector(".ol").textContent) >= 0); });
+          lock(otherText ? "You answered: " + otherText : "Answered");
+        } else asMessage(choices, otherText);
+      }).catch(function () { asMessage(choices, otherText); });
+    }
+    if (answered) lock(card.answer.other ? "You answered: " + card.answer.other : "Answered");
+    else if (expired) { el.dataset.expired = "1"; st.textContent = "Pick one to answer in a new message"; }
+    return el;
+  }
+  function expireAsks() {  // turn ended: unanswered cards now answer by sending a new message
+    Array.prototype.forEach.call(logEl.querySelectorAll(".askcard:not(.done)"), function (c) {
+      c.dataset.expired = "1"; var st = c.querySelector(".st"); if (st) st.textContent = "Pick one to answer in a new message";
+    });
+  }
+
+
+  // ---------- skills pane
+  window.loadSkills = function () {
+    Promise.all([fetch(api("/skills")).then(function (r) { return r.json(); }), fsCall({ type: "fs-get" })])
+      .then(function (r) { paintSkills(r[0], r[1]); })
+      .catch(function () { $("skillsPane").innerHTML = '<div class="mempty">Failed to load skills.</div>'; });
+  };
+  function skillRow(sk, kind, edit) {  // kind: "file" | "me" | "builtin"
+    var row = document.createElement("div"); row.className = "sitem";
+    var ctl = kind === "builtin" ? ""
+      : edit ? '<button class="del" title="Delete skill">✕</button><span class="tgl" title="On / off"></span>'
+      : '<span class="lbl">' + (sk.enabled ? "On" : "Off") + "</span>";
+    row.innerHTML = '<span class="si">' + (kind === "file" ? "▤" : kind === "me" ? "✎" : "◆") + '</span><div class="sb"><div class="sn"></div><div class="sd"></div></div>' + ctl;
+    row.querySelector(".sn").textContent = sk.name;
+    row.querySelector(".sd").textContent = sk.description || "";
+    row.title = (sk.description || "") + (sk.by ? "\nAdded by " + sk.by : "");
+    if (kind !== "builtin" && edit) {
+      var t = row.querySelector(".tgl");
+      t.classList.toggle("on", sk.enabled);
+      t.onclick = function () {
+        var on = !t.classList.contains("on"); t.classList.toggle("on", on);
+        if (kind === "file") fsEdit({ op: "skill-toggle", name: sk.name, enabled: on }).then(function (r) { if (r.error) loadSkills(); });
+        else post("/skills/toggle", { name: sk.name, enabled: on });
+      };
+      row.querySelector(".del").onclick = function () {
+        if (!confirm(kind === "file" ? "Delete “" + sk.name + "” from this file? It's removed for everyone using Pollie on it." : "Delete the skill “" + sk.name + "”?")) return;
+        (kind === "file" ? fsEdit({ op: "skill-delete", name: sk.name }) : post("/skills/delete", { name: sk.name })).then(loadSkills);
+      };
+    }
+    return row;
+  }
+  function groupHead(pane, title, tag, tip, addLabel, add) {
+    var g = document.createElement("div"); g.className = "mgroup";
+    g.innerHTML = '<span class="gt"><span></span>' + (tag ? '<span class="gtag"></span>' : "") + "</span>" + (add ? '<button class="add"></button>' : "");
+    g.querySelector(".gt span").textContent = title;
+    if (tag) g.querySelector(".gtag").textContent = tag;
+    if (tip) g.querySelector(".gt").title = tip;
+    if (add) { var b = g.querySelector(".add"); b.textContent = "＋ " + addLabel; b.onclick = add; }
+    pane.appendChild(g);
+    return g;
+  }
+  function emptyLine(pane, text) { var e = document.createElement("div"); e.className = "mempty"; e.textContent = text; pane.appendChild(e); }
+  // empty group: an inviting "add" tile instead of grey text (the header's ＋ Add hides while it's shown)
+  function emptyTile(pane, head, icon, title, sub, onClick) {
+    if (!onClick) return emptyLine(pane, sub);
+    var b = document.createElement("button"); b.type = "button"; b.className = "etile";
+    b.innerHTML = '<span class="ei"></span><span class="eb"><span class="et"></span><span class="es"></span></span>';
+    b.querySelector(".ei").textContent = icon;
+    b.querySelector(".et").textContent = title;
+    b.querySelector(".es").textContent = sub;
+    b.onclick = function () { onClick(b); };
+    var add = head && head.querySelector(".add"); if (add) add.style.display = "none";
+    pane.appendChild(b);
+  }
+  function paintSkills(d, fs) {
+    var pane = $("skillsPane"); pane.innerHTML = "";
+    var edit = fs.canEdit && !fs.error;
+    var hf = groupHead(pane, "This file", edit ? "Shared" : "View only",
+      edit ? "Saved in this Figma file. Everyone using Pollie on it gets these, on any computer." : "You need edit access to change this file's skills.",
+      "Add", edit ? function () { openSkillSheet("file"); } : null);
+    if (!(fs.skills || []).length) emptyTile(pane, hf, "＋", "Add a skill to this file", "Everyone using Pollie on this file gets it", edit ? function () { openSkillSheet("file"); } : null);
+    (fs.skills || []).forEach(function (sk) { pane.appendChild(skillRow(sk, "file", edit)); });
+    var hm = groupHead(pane, "Only me", "", "Kept on this Mac, only for you. Used in every file.", "Add", function () { openSkillSheet("me"); });
+    if (!(d.mine || []).length) emptyTile(pane, hm, "＋", "Add your own skill", "Just for you, in every file", function () { openSkillSheet("me"); });
+    (d.mine || []).forEach(function (sk) { pane.appendChild(skillRow(sk, "me", true)); });
+    groupHead(pane, "Built-in", "", "Comes with Pollie.", "", null);
+    (d.builtin || []).forEach(function (sk) { pane.appendChild(skillRow(sk, "builtin", false)); });
+    if (fs.error) paneNote(pane, fs.error);
+  }
+
+  // ---------- add-skill sheet
+  var skPayload = null, skDest = "me";  // {text} or {zip, name}; save to "me" (this Mac) or "file" (the Figma file)
+  function setSkDest(d) {
+    skDest = d === "file" && lastFs.canEdit ? "file" : "me";
+    Array.prototype.forEach.call($("skTo").children, function (b) { b.classList.toggle("on", b.dataset.d === skDest); b.disabled = b.dataset.d === "file" && !lastFs.canEdit; });
+    $("skSub").textContent = skDest === "file"
+      ? "Saved in this Figma file: it follows the file to any computer, and everyone using Pollie on it gets it."
+      : "Kept on this Mac, only for you. Used in every file.";
+  }
+  Array.prototype.forEach.call($("skTo").children, function (b) { b.onclick = function () { setSkDest(b.dataset.d); }; });
+  function parseFront(text) {
+    var m = /^\s*---\s*\n([\s\S]*?)\n---/.exec(text || ""), meta = {};
+    if (m) m[1].split("\n").forEach(function (l) { var i = l.indexOf(":"); if (i > 0) meta[l.slice(0, i).trim().toLowerCase()] = l.slice(i + 1).trim().replace(/^["']|["']$/g, ""); });
+    return meta;
+  }
+  function skPreview() {
+    $("skErr").textContent = "";
+    if (skPayload && skPayload.zip) {
+      $("skPrev").classList.add("on"); $("skPrevName").textContent = skPayload.name; $("skPrevDesc").textContent = "Skill folder (.zip) — checked when you add it";
+      $("skAdd").disabled = false; return;
+    }
+    var t = $("skText").value, meta = parseFront(t);
+    skPayload = t.trim() ? { text: t } : null;
+    var ok = !!(meta.name && meta.description);
+    $("skPrev").classList.toggle("on", ok);
+    if (ok) { $("skPrevName").textContent = meta.name; $("skPrevDesc").textContent = meta.description; }
+    else if (t.trim()) $("skErr").textContent = "Needs a front matter with name and description:\n---\nname: my-skill\ndescription: When to use it\n---";
+    $("skAdd").disabled = !ok;
+  }
+  function openSkillSheet(dest) { skPayload = null; $("skText").value = ""; setSkDest(dest); skPreview(); $("skillSheetWrap").classList.add("on"); }
+  function closeSkillSheet() { $("skillSheetWrap").classList.remove("on"); }
+  function takeFile(f) {
+    if (!f) return;
+    if (/\.zip$/i.test(f.name)) {
+      if (f.size > 2 * 1024 * 1024) { $("skErr").textContent = "The zip is larger than 2 MB."; return; }
+      var r = new FileReader();
+      r.onload = function () { skPayload = { zip: String(r.result).split(",")[1], name: f.name }; $("skText").value = ""; skPreview(); };
+      r.readAsDataURL(f);
+    } else {
+      var r2 = new FileReader();
+      r2.onload = function () { skPayload = null; $("skText").value = String(r2.result); skPreview(); };
+      r2.readAsText(f);
+    }
+  }
+  $("skDrop").onclick = function () { $("skFile").click(); };
+  $("skFile").onchange = function () { takeFile(this.files[0]); this.value = ""; };
+  $("skDrop").ondragover = function (e) { e.preventDefault(); this.classList.add("over"); };
+  $("skDrop").ondragleave = function () { this.classList.remove("over"); };
+  $("skDrop").ondrop = function (e) { e.preventDefault(); this.classList.remove("over"); takeFile(e.dataTransfer.files[0]); };
+  $("skText").oninput = function () { skPayload = null; skPreview(); };
+  $("skCancel").onclick = closeSkillSheet;
+  $("skillSheetWrap").onclick = function (e) { if (e.target === this) closeSkillSheet(); };
+  $("skAdd").onclick = function () {
+    if (!skPayload) return;
+    $("skAdd").disabled = true;
+    function fail(msg) { $("skErr").textContent = msg; $("skAdd").disabled = false; }
+    if (skDest === "file") {  // the bridge checks it (and unpacks a zip); the plugin stores it in the file
+      post("/skills/parse", skPayload).then(function (r) {
+        if (!r || !r.ok) return fail((r && r.error) || "Could not read the skill.");
+        return fsEdit({ op: "skill-add", name: r.skill.name, description: r.skill.description, text: r.skill.text }).then(function (fs) {
+          if (fs.error) return fail(fs.error);
+          closeSkillSheet(); loadSkills();
+        });
+      }).catch(function () { fail("Could not reach the bridge."); });
+      return;
+    }
+    post("/skills/add", skPayload).then(function (r) {
+      if (r && r.ok) { closeSkillSheet(); loadSkills(); }
+      else fail((r && r.error) || "Could not add the skill.");
+    }).catch(function () { fail("Could not reach the bridge."); });
+  };
+
+  function openHistory() {
+    closeMenus();
+    $("history").classList.add("open");
+    $("scrim").classList.add("open");
+    fetch(api("/conversations")).then(function (r) { return r.json(); }).then(function (data) {
+      // empty chats (opened but never used) stay out of the list, except the one you're in
+      listCache = (data.conversations || []).filter(function (c) { return c.turns > 0 || (activeTab && c.id === activeTab.id); });
+      paintList();
+    }).catch(function () { $("hlist").innerHTML = '<div class="hgroup">Failed to load — is the bridge running?</div>'; });
+  }
+  function paintList() {
+    var list = $("hlist");
+    list.innerHTML = "";
+    if (!listCache.length) { list.innerHTML = '<div class="hgroup">No errands yet</div>'; return; }
+    // group by file: this file first, then other files by most recent activity
+    var groups = {}, keys = [];
+    listCache.forEach(function (c) {
+      var k = mine(c) ? "\u0000this" : c.file;
+      if (!groups[k]) { groups[k] = []; keys.push(k); }
+      groups[k].push(c);
+    });
+    keys.sort(function (a, b) { return a === "\u0000this" ? -1 : b === "\u0000this" ? 1 : 0; });
+    keys.forEach(function (k) {
+      var h = document.createElement("div"); h.className = "hgroup";
+      h.textContent = k === "\u0000this" ? "This file" + (fileName ? " · " + fileName : "") : k;
+      list.appendChild(h);
+      groups[k].forEach(function (c) {
+        var t = tabs[c.id];
+        var b = document.createElement("div");
+        b.className = "hitem" + (activeTab && c.id === activeTab.id ? " cur" : "") + (k === "\u0000this" ? "" : " other");
+        b.innerHTML = '<span class="hs">' + convStatusIcon(t, c.status, c.id) + '</span><div class="hb"><div class="t"></div><div class="s"></div></div>' +
+          '<button class="hdel" title="Delete errand"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/></svg></button>';
+        b.querySelector(".t").textContent = (t && t.title) || c.title || "New errand";
+        b.querySelector(".s").textContent = fmtTime(c.updatedAt) + " · " + c.turns + (c.turns === 1 ? " msg" : " msgs");
+        b.onclick = function (ev) {
+          if (ev.target.closest(".hdel")) { ev.stopPropagation(); deleteConv(c.id, c.title); return; }
+          openConv(c.id);
+        };
+        list.appendChild(b);
+      });
+    });
+  }
+  function closeHistory() { $("history").classList.remove("open"); $("scrim").classList.remove("open"); setTimeout(function () { if (!$("history").classList.contains("open")) setDrawerTab("chats"); }, 250); }
+  $("scrim").onclick = closeHistory;
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && $("history").classList.contains("open")) closeHistory(); });
+  $("historyBtn").onclick = function () { if ($("history").classList.contains("open")) closeHistory(); else openHistory(); };
+  $("newFromList").onclick = function () { newConversation(); };
+  $("historyBack").onclick = closeHistory;
+
+  function renderConversation(conv) {
+    currentConvId = conv.id;
+    logEl.innerHTML = "";
+    current = null;
+    titleEl.textContent = conv.title || "New errand";
+    titled = !!(conv.messages && conv.messages.length);
+    if (!titled) logEl.innerHTML = '<div class="empty">Select layers and describe a change</div>';  // never-used chat
+    (conv.messages || []).forEach(function (m) {
+      if (m.role === "user") {
+        var u = add("user", m.text || "");
+        if (m.tag) { var tg = document.createElement("div"); tg.className = "tag"; tg.textContent = m.tag; u.insertBefore(tg, u.firstChild); }
+        userImages(u, m.images);
+        if (m.selection && m.selection.length) {
+          var c = document.createElement("div"); c.className = "ctx";
+          c.textContent = m.selection.length === 1 ? "▢ " + m.selection[0] : "▢ " + m.selection.length + " selected";
+          u.appendChild(c);
+        }
+      } else {
+        var w = makeWork(false), meta = null, lastText = null;
+        logEl.appendChild(w);
+        (m.items || []).forEach(function (it) {
+          if (it.kind === "text") lastText = add("assistant", it.text);
+          else if (it.kind === "step") { foldText(w, lastText); lastText = null; var f = friendly(it.name, it.detail, it.kind2); workStep(w, f[0], f[1]); }
+          else if (it.kind === "meta") meta = it;
+          else if (it.kind === "ask") { lastText = null; logEl.appendChild(askCard(it, false)); }
+          else if (it.kind === "memory") { lastText = null; memoryChip(it, false); }
+        });
+        finishWork(w, meta && meta.ms ? (meta.ms / 1000).toFixed(1) : null, meta && meta.error);
+      }
+    });
+    scroll();
+  }
+
+  function connect() {
+    var es = new EventSource(api("/events"));
+    es.onopen = function () { connected = true; everConnected = true; setStatus(); refreshComments(); loadModels(); obConnected();
+      warmed = {}; if (activeTab) warmUp(activeTab.id); };
+    es.onerror = function () {
+      connected = false; setStatus();
+      es.close();
+      // reachable but refusing our key (bridge data reset / key removed): pair again
+      fetch(api("/conversations")).then(function (r) {
+        if (r.status === 401) { token = null; parent.postMessage({ pluginMessage: { type: "set-token", token: null } }, "*"); showOnboard(); return; }
+        setTimeout(connect, 1500);
+      }).catch(function () { setTimeout(connect, 1500); });
+    };
+    es.onmessage = function (ev) {
+      var e = JSON.parse(ev.data);
+      if (e.type === "client") { clientId = e.id; return; }
+      if (e.type === "convs") {
+        var live = {};
+        (e.running || []).forEach(function (h) { live[h.agent] = true; ensureTab(h.agent); withTab(tabs[h.agent], function () { handleEvent(h); }); });
+        // a turn that finished (or a bridge that restarted) while we were disconnected: don't stay "working"
+        order.forEach(function (id) {
+          var t = tabs[id], b = t === activeTab ? busy : t.s.busy;
+          if (b && !live[id]) withTab(t, function () { handleEvent({ type: "done", agent: id, error: "Connection to the agent was interrupted" }); });
+        });
+        // this window's id changed on reconnect: re-claim our running chats so their canvas steps reach us
+        post("/attach", { clientId: clientId, agents: order.filter(function (id) { return live[id] && fileName && tabs[id].file === fileName; }) });
+        if (!activeTab || !activeTab.loaded) whenFileKnown(function () {
+          if (activeTab && activeTab.loaded) return;
+          fetch(api("/conversations")).then(function (r) { return r.json(); }).then(function (d) {
+            if (activeTab && activeTab.loaded) return;
+            var list = (d.conversations || []).filter(mine);
+            if (list.length) openConv(list[0].id); else newConversation();
+          });
+        });
+        renderTabs();
+        return;
+      }
+      if (e.agent && !tabs[e.agent]) ensureTab(e.agent);
+      var tab = (e.agent && tabs[e.agent]) || activeTab;
+      if (!tab) return;
+      withTab(tab, function () { handleEvent(e); });
+      renderTabs();
+    };
+  }
+
+  function handleEvent(e) {
+      if (e.type === "queued") {
+        var other = tabs[e.waitingFor];
+        setActivity("Waiting for " + (other && other.title ? "“" + other.title.slice(0, 24) + "”" : "another errand") + " (same screen)");
+        ctxTab.queued = true;
+      }
+      else if (e.type === "dequeued") { ctxTab.queued = false; setActivity("Thinking"); }
+      else if (e.type === "hello") {
+        modelLabel = e.model || ""; busy = !!e.busy || !!e.queued; ctxTab.queued = !!e.queued; ctxTab.s.config = e.config;
+        if (ctxTab === activeTab) applyConfig(e.config);
+        setStatus();
+      }
+      else if (e.type === "delta") {
+        if (activity === "Thinking") setActivity("Writing reply");
+        if (!current) current = add("assistant", "");
+        setReply(current, (current._raw || "") + e.text);
+        scroll();
+      }
+      else if (e.type === "tool") {
+        if (work) {
+          foldText(work, current);
+          if (e.name === "figma_execute" && e.kind === "edit") edited = true;
+          var f = friendly(e.name, e.summary, e.kind);
+          workStep(work, f[0], f[1]);
+          setActivity(phase(e.name, e.kind));
+          tickStatus();
+        }
+        current = null;
+      }
+      else if (e.type === "retract") {  // bridge is swapping a wrong-language reply for a rewritten one
+        if (current) setReply(current, "");
+        setActivity("Writing reply");
+      }
+      else if (e.type === "ask") {
+        if (work) { foldText(work, current); }
+        current = null;
+        setActivity("Waiting for your answer");
+        logEl.appendChild(askCard(e, true)); scroll();
+      }
+      else if (e.type === "ask-expired") {
+        var ac = logEl.querySelector('.askcard[data-ask="' + e.id + '"]');
+        if (ac && !ac.classList.contains("done")) { ac.dataset.expired = "1"; ac.querySelector(".st").textContent = "Pick one to answer in a new message"; }
+      }
+      else if (e.type === "memory") { current = null; memoryChip(e, true); }
+      else if (e.type === "exec") { execInFigma(e.id, e.op, e.args); }
+      else if (e.type === "done") {
+        expireAsks();
+        current = null;
+        ctxTab.queued = false;
+        if (minimized) unseen = true;
+        if (ctxTab !== activeTab) ctxTab.unseen = true;
+        if (turnItems) endTurn(e.error);
+        else if (e.error) add(e.error === "Stopped" ? "meta" : "meta err", e.error);
+        setTimeout(refreshComments, 1500);
+        parent.postMessage({ pluginMessage: { type: "turn-boundary" } }, "*");
+        busy = false; setStatus();
+      }
+      else if (e.type === "reset") { needDesignSystem = true; currentConvId = null; }
+  }
+
+  // --- tabs: each tab is its own agent; per-tab state is swapped in and out of the globals above
+  var KEYS = ["logEl", "busy", "needDesignSystem", "current", "turnStart", "titled", "modelLabel", "work",
+              "statusLine", "statusTimer", "activity", "turnItems", "edited", "currentConvId"];
+  var tabs = {}, order = [], activeTab = null, ctxTab = null, clientId = null;
+  // only this file's chats (plus brand-new ones) show up in this window
+  function whenFileKnown(fn, tries) {
+    tries = tries || 0;
+    if (fileName || tries > 20) return fn();
+    setTimeout(function () { whenFileKnown(fn, tries + 1); }, 100);
+  }
+  function mine(c) { return !c.file || !fileName || c.file === fileName; }
+  function freshState(id) {
+    var log = document.createElement("div");
+    log.className = "log"; log.id = "log-" + id;
+    log.innerHTML = '<div class="empty">Select layers and describe a change</div>';
+    $("logs").appendChild(log);
+    return { logEl: log, busy: false, needDesignSystem: true, current: null, turnStart: 0, titled: false, modelLabel: "",
+             work: null, statusLine: null, statusTimer: null, activity: "Thinking", turnItems: null, edited: false, currentConvId: null };
+  }
+  function save(tab) { KEYS.forEach(function (k) { tab.s[k] = window[k]; }); }
+  function load(tab) { KEYS.forEach(function (k) { window[k] = tab.s[k]; }); }
+  function withTab(tab, fn) {
+    if (!tab || tab === ctxTab) return fn();
+    var prev = ctxTab;
+    if (prev) save(prev);
+    load(tab); ctxTab = tab;
+    try { return fn(); }
+    finally { save(tab); if (prev) load(prev); ctxTab = prev; }
+  }
+  function ensureTab(id) {
+    if (tabs[id]) return tabs[id];
+    var t = { id: id, s: freshState(id), title: "", unseen: false, queued: false, loaded: false };
+    tabs[id] = t; order.push(id);
+    return t;
+  }
+  function dropTab(id) {
+    var t = tabs[id]; if (!t) return;
+    if (t.s.statusTimer) clearInterval(t.s.statusTimer);
+    t.s.logEl.remove();
+    delete tabs[id]; order = order.filter(function (x) { return x !== id; });
+    if (activeTab === t) { activeTab = null; ctxTab = null; }
+  }
+  // start the errand's agent in the background as soon as it's on screen, so the first message doesn't wait for it
+  var warmed = {};
+  function warmUp(id) {
+    if (!connected || !id || warmed[id] || isForeign(tabs[id])) return;
+    warmed[id] = true;
+    setTimeout(function () { post("/warm", { agent: id }).catch(function () { warmed[id] = false; }); }, 300);
+  }
+  function switchTab(id) {
+    var t = tabs[id]; if (!t) return;
+    if (activeTab) { save(activeTab); activeTab.s.logEl.classList.remove("active"); }
+    activeTab = t; ctxTab = t; load(t);
+    t.unseen = false;
+    warmUp(id);
+    logEl.classList.add("active");
+    titleEl.textContent = t.title || "New errand";
+    if (t.s.config || defaultCfg) applyConfig(t.s.config || defaultCfg);  // a chat with no running agent shows the defaults
+    setStatus(); renderTabs(); scroll();
+  }
+  function anyBusy() { return order.some(function (id) { return tabs[id] === activeTab ? busy : tabs[id].s.busy; }); }
+  // every errand gets its own little hand-drawn flower (petals, shape and colour come from its id)
+  var ERRAND_COLORS = ["#5f6ff0", "#e0789a", "#e39a2f", "#3fa37a", "#8c6be8", "#3a9fd6", "#d9694a"], errandIcons = {};
+  // "Flower colors" (personal, saved by the plugin): every errand its own colour, or one colour for the whole garden
+  var garden = { mode: "colorful", color: "#5f6ff0" };
+  var GARDEN_SWATCHES = ["#5f6ff0", "#e0789a", "#3fa37a", "#e39a2f", "var(--fg)"];  // one-colour choices (last = ink)
+  function setGarden(v, save) {
+    garden = { mode: v && v.mode === "single" ? "single" : "colorful", color: (v && v.color) || garden.color };
+    errandIcons = {};
+    paintGardenBar();
+    if (save) parent.postMessage({ pluginMessage: { type: "set-pref", key: "gardenColors", value: garden } }, "*");
+    if ($("history").classList.contains("open")) paintList();
+    $("runBadge").dataset.kind = ""; $("miniIcon").dataset.kind = "";  // redraw running flowers in the new colour
+    setStatus();
+  }
+  function paintGardenBar() {
+    $("gswatches").innerHTML = "";
+    ["colorful"].concat(GARDEN_SWATCHES).forEach(function (c) {  // first: every errand its own colour
+      var b = document.createElement("button"); b.type = "button";
+      if (c === "colorful") { b.className = "rainbow"; b.title = "Colorful"; b.classList.toggle("on", garden.mode !== "single"); }
+      else { b.style.background = c; b.title = c === "var(--fg)" ? "Ink" : c; b.classList.toggle("on", garden.mode === "single" && garden.color === c); }
+      b.onclick = function () { setGarden(c === "colorful" ? { mode: "colorful", color: garden.color } : { mode: "single", color: c }, true); };
+      $("gswatches").appendChild(b);
+    });
+  }
+  paintGardenBar();
+
+  function errandIcon(id) {
+    if (!errandIcons[id]) {
+      var h = 0, str = String(id || "");
+      for (var i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+      var seed = 1 + (h >>> 6) % 997, color = garden.mode === "single" ? garden.color : ERRAND_COLORS[h % ERRAND_COLORS.length];
+      var svg = [function () { return sketchFlower("bloom", 5 + (h >>> 3) % 3, seed); }, function () { return roundUnionFlower("long", seed); },
+                 function () { return roundUnionFlower("center", seed); }][(h >>> 4) % 3]();
+      errandIcons[id] = { still: '<span class="eicon" style="color:' + color + '">' + svg + "</span>", live: drawingFlower(svg, color) };
+    }
+    return errandIcons[id].still;
+  }
+  // the errand's own flower being drawn (same animation as the original loading flower, in its colour)
+  function drawingFlower(staticSvg, color) {
+    var paths = staticSvg.match(/<path [^>]*\/>/g) || [];
+    return '<svg class="flower" style="color:' + color + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><g filter="url(#boil)">' +
+      paths.map(function (p) {
+        if (/d="M12\.4 12\.2c/.test(p)) return p.replace("<path ", '<path class="dot" ');
+        return p.replace("<path ", /opacity=/.test(p) ? '<path class="draw ghost" pathLength="1" ' : '<path class="draw" pathLength="1" ').replace(/ opacity="[^"]*"/, "");
+      }).join("") + "</g></svg>";
+  }
+  function errandFlower(id) {  // animated; falls back to the original flower when the errand isn't known yet
+    if (!id) return FLOWER;
+    errandIcon(id);
+    return errandIcons[id].live;
+  }
+  // the same hand-drawn look as sketchFlower, other petal layouts:
+  // "long" = six long, round-tipped petals (cosmos); "center" = eight small petals around a big round centre
+  function roundUnionFlower(kind, seed) {
+    function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+    var circles = [], i, a;
+    if (kind === "long") {
+      for (i = 0; i < 6; i++) {
+        a = -Math.PI / 2 + i * Math.PI / 3 + (rnd() - .5) * .15;
+        [[4, 2.5], [6.6, 2.6], [8.4, 2.1]].forEach(function (q) { circles.push({ x: q[0] * Math.cos(a), y: q[0] * Math.sin(a), r: q[1] }); });
+      }
+    } else {
+      for (i = 0; i < 8; i++) {
+        a = -Math.PI / 2 + i * Math.PI / 4 + (rnd() - .5) * .2;
+        var d = 7 + rnd() * .5;
+        circles.push({ x: d * Math.cos(a), y: d * Math.sin(a), r: 2.5 + rnd() * .5 });
+      }
+      circles.push({ x: 0, y: 0, r: 6.4 });
+    }
+    function outline(jitter, rot, shrink) {
+      var pts = [], steps = 150, over = 0.35;
+      for (var k = 0; k <= steps; k++) {
+        var th = rot + (k / steps) * (2 * Math.PI + over), ux = Math.cos(th), uy = Math.sin(th), best = 0;
+        circles.forEach(function (p) {
+          var proj = p.x * ux + p.y * uy, disc = p.r * p.r - (p.x * p.x + p.y * p.y - proj * proj);
+          if (disc > 0) best = Math.max(best, proj + Math.sqrt(disc));
+        });
+        var r = best * shrink + (rnd() - .5) * jitter;
+        pts.push([12 + r * ux, 12 + r * uy]);
+      }
+      var d = "M" + pts[0][0].toFixed(2) + " " + pts[0][1].toFixed(2);
+      for (var j = 1; j < pts.length - 1; j++) {
+        var p1 = pts[j], p2 = pts[j + 1];
+        d += " Q" + p1[0].toFixed(2) + " " + p1[1].toFixed(2) + " " + ((p1[0] + p2[0]) / 2).toFixed(2) + " " + ((p1[1] + p2[1]) / 2).toFixed(2);
+      }
+      return d;
+    }
+    return '<svg class="ficon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="' + outline(0.4, -Math.PI / 2 + 0.9, 0.94) + '" stroke-width="1.1" opacity=".4"/><path d="' + outline(0.25, -Math.PI / 2 + 0.3, 1) + '" stroke-width="1.9"/>' +
+      (kind === "center"
+        ? (function () { var c = circles; circles = [{ x: 0, y: 0, r: 3.2 }]; var d = outline(0.3, 0.5, 1); circles = c;
+            return '<path d="' + d + '" stroke-width="1.6"/><path d="M12.4 12.2c-.6.5-1.4-.1-1.1-.8.4-.9 1.8-.8 2.1.2.3 1.1-.8 2-1.9 1.8-1.4-.2-1.9-1.8-1.2-2.9" stroke-width="2.6" transform="translate(4.8 4.8) scale(.6)"/>'; })()
+        : '<path d="M12.4 12.2c-.6.5-1.4-.1-1.1-.8.4-.9 1.8-.8 2.1.2.3 1.1-.8 2-1.9 1.8-1.4-.2-1.9-1.8-1.2-2.9" stroke-width="1.6"/>') + "</svg>";
+  }
+  function convStatusIcon(t, status, id) {
+    var busyNow = t ? (t === activeTab ? busy : t.s.busy) : status === "busy" || status === "queued";
+    var queuedNow = t ? t.queued : status === "queued";
+    if (busyNow) return queuedNow ? '<span class="q">⏳</span>' : errandFlower(id);
+    return errandIcon(id) + (t && t.unseen ? '<span class="d"></span>' : "");
+  }
+  function renderTabs() {
+    if (activeTab) save(activeTab);
+    var others = order.filter(function (id) { var t = tabs[id]; return t !== activeTab && (t.s.busy || t.unseen); });
+    var runningOthers = order.filter(function (id) { return tabs[id] !== activeTab && tabs[id].s.busy; }).length;
+    var badge = $("runBadge");
+    badge.className = !others.length ? "" : runningOthers ? "on run" : "on dot";
+    var firstRun = order.filter(function (id) { return tabs[id] !== activeTab && tabs[id].s.busy; })[0];
+    var want = runningOthers ? "run:" + firstRun : others.length ? "dot" : "";
+    if (badge.dataset.kind !== want) { badge.innerHTML = runningOthers ? errandFlower(firstRun) : ""; badge.dataset.kind = want; }  // keep the animation running
+    badge.title = runningOthers ? "Other errands are running" : "New replies in other errands";
+    if ($("history").classList.contains("open")) paintList();
+  }
+  // --- conversations: create, open (load its transcript), delete
+  function newConversation() {
+    return post("/conversations/new", { file: fileName }).then(function (conv) {
+      ensureTab(conv.id);
+      tabs[conv.id].loaded = true;
+      tabs[conv.id].file = fileName;
+      switchTab(conv.id);
+      closeHistory();
+      input.focus();
+    });
+  }
+  function openConv(id) {
+    closeMenus();
+    if (tabs[id] && tabs[id].loaded) { switchTab(id); closeHistory(); return Promise.resolve(); }
+    return fetch(api("/conversations/" + encodeURIComponent(id))).then(function (r) { return r.json(); }).then(function (conv) {
+      if (!conv || conv.error) return;
+      var t = ensureTab(id);
+      t.loaded = true;
+      t.title = conv.title || "";
+      t.file = conv.file || null;
+      withTab(t, function () {
+        var wasBusy = busy;
+        renderConversation(conv);
+        needDesignSystem = !conv.sessionId;
+        if (wasBusy) { startTurn(); busy = true; }  // still working in the background: show the live line again
+      });
+      switchTab(id);
+      closeHistory();
+    });
+  }
+  function deleteConv(id, title) {
+    if (!confirm("Delete \"" + (title || "New errand") + "\"? This can't be undone.")) return;
+    post("/conversations/delete", { id: id }).then(function () {
+      var wasActive = activeTab && activeTab.id === id;
+      if (tabs[id]) dropTab(id);
+      if (wasActive) {
+        fetch(api("/conversations")).then(function (r) { return r.json(); }).then(function (d) {
+          var list = (d.conversations || []).filter(mine);
+          if (list.length) openConv(list[0].id); else newConversation();
+        });
+      }
+      if ($("history").classList.contains("open")) openHistory();
+    });
+  }
+
+
+  // --- minimize / restore
+  var minimized = false, unseen = false;
+  var EXPAND = BLOOM;  // open flower = restore
+  function renderMini() {
+    if (!minimized) return;
+    var b = anyBusy();
+    var runId = activeTab && busy ? activeTab.id : order.filter(function (id) { return tabs[id].s.busy; })[0];
+    var want = b ? "run:" + runId : "rest";
+    if ($("miniIcon").dataset.kind !== want) { $("miniIcon").innerHTML = b ? errandFlower(runId) : EXPAND; $("miniIcon").dataset.kind = want; }
+    $("miniDot").className = b ? "busy" : unseen ? "new" : connected ? "" : "off";
+    $("mini").title = b ? "Working… click to open" : unseen ? "Done — click to see the reply" : "Open Pollie";
+  }
+  function minimize() {
+    closeMenus();
+    minimized = true; unseen = false;
+    document.body.classList.add("minimized");
+    renderMini();
+    parent.postMessage({ pluginMessage: { type: "minimize" } }, "*");
+  }
+  function restore() {
+    minimized = false; unseen = false;
+    document.body.classList.remove("minimized");
+    parent.postMessage({ pluginMessage: { type: "restore" } }, "*");
+    setTimeout(function () { scroll(); input.focus(); }, 50);
+  }
+  $("minBtn").onclick = minimize;
+  $("mini").onclick = restore;
+
+  // --- resize the plugin window by dragging the corner grip (min size enforced in code.js)
+  (function () {
+    var grip = $("grip"), startX, startY, startW, startH, last = null;
+    function send(e, done) {
+      var w = startW + (e.clientX - startX), h = startH + (e.clientY - startY);
+      last = { w: Math.max(320, w), h: Math.max(420, h) };
+      parent.postMessage({ pluginMessage: { type: "resize", w: last.w, h: last.h, done: done } }, "*");
+    }
+    grip.addEventListener("pointerdown", function (e) {
+      e.preventDefault();
+      startX = e.clientX; startY = e.clientY; startW = window.innerWidth; startH = window.innerHeight;
+      grip.setPointerCapture(e.pointerId);
+      grip.onpointermove = function (ev) { send(ev, false); };
+    });
+    grip.addEventListener("pointerup", function (e) {
+      grip.onpointermove = null;
+      grip.releasePointerCapture(e.pointerId);
+      send(e, true);
+    });
+  })();
+
+
+  // ---------- first-run onboarding: pair with the local bridge (user approves a dialog on this Mac), then connect
+  var obState = null, obConnecting = false, obTimer = null;  // null = unknown yet, "show", "found", "done"
+  function showOnboard() {
+    obState = "show";
+    $("obFlower").innerHTML = BLOOM;
+    $("obStatus").textContent = "";
+    var b = $("obBtn"); b.disabled = false; b.classList.remove("loading"); b.textContent = "Connect";
+    $("onboard").classList.add("on");
+  }
+  function startConnecting() { if (!obConnecting) { obConnecting = true; connect(); } }
+  function obConnected() {
+    if (obState !== "show") return;
+    obState = "found";
+    fetch(api("/models")).then(function (r) { return r.json(); }).then(function (d) {
+      var html = '<div class="ok">Connected. Agents on this Mac:</div><div class="agents">';
+      html += "<span>" + logoHtml("claude") + "Claude Code</span>";
+      html += d.codex && d.codex.length ? "<span>" + logoHtml("codex") + "Codex</span>" : '<span style="color:var(--fg3)">Codex not found</span>';
+      $("obStatus").innerHTML = html + "</div>";
+    }).catch(function () { $("obStatus").innerHTML = '<div class="ok">Connected.</div>'; });
+    $("obFlower").innerHTML = BLOOM;
+    var b = $("obBtn"); b.disabled = false; b.classList.remove("loading"); b.textContent = "Get started";
+  }
+  function obFail(html) {
+    clearTimeout(obTimer);
+    $("obFlower").innerHTML = BLOOM;
+    $("obStatus").innerHTML = html;
+    var b = $("obBtn"); b.disabled = false; b.classList.remove("loading"); b.textContent = "Try again";
+  }
+  function obPoll(pid, until) {
+    if (Date.now() > until) return obFail('<div class="err">No answer from the dialog on your Mac.</div>Click Try again and choose Allow.');
+    fetch(BASE + "/pair/" + pid).then(function (r) { return r.json(); }).then(function (d) {
+      if (d.status === "allowed" && d.token) {
+        token = d.token;
+        parent.postMessage({ pluginMessage: { type: "set-token", token: token } }, "*");
+        $("obStatus").textContent = "";
+        $("obBtn").innerHTML = '<span class="spin"></span>Connecting…';
+        startConnecting();
+      } else if (d.status === "denied") {
+        obFail('<div class="err">Connection was not allowed.</div>Click Try again and choose Allow in the dialog.');
+      } else if (d.status === "pending") {
+        obTimer = setTimeout(function () { obPoll(pid, until); }, 800);
+      } else obFail('<div class="err">Pairing expired.</div>Click Try again.');
+    }).catch(function () { obTimer = setTimeout(function () { obPoll(pid, until); }, 1500); });
+  }
+  $("obBtn").onclick = function () {
+    if (obState === "found") {
+      obState = "done";
+      $("onboard").classList.remove("on");
+      input.focus();
+      return;
+    }
+    var b = $("obBtn"); b.disabled = true; b.classList.add("loading");
+    b.innerHTML = '<span class="spin"></span>Connecting…';
+    $("obFlower").innerHTML = FLOWER;
+    $("obStatus").textContent = "";
+    if (token) { startConnecting(); return; }
+    fetch(BASE + "/pair", { method: "POST", headers: { "Content-Type": "text/plain" }, body: "{}" })
+      .then(function (r) { return r.json().then(function (d) { return { status: r.status, d: d }; }); })
+      .then(function (res) {
+        if (res.status === 429) { $("obStatus").textContent = "A request is already waiting — check the dialog on your Mac."; return; }
+        if (!res.d.id) return obFail('<div class="err">Could not start pairing.</div>');
+        b.innerHTML = '<span class="spin"></span>Waiting for approval…';
+        $("obStatus").textContent = "Click Allow in the dialog on your Mac.";
+        obPoll(res.d.id, Date.now() + 100000);
+      })
+      .catch(function () {
+        obFail('<div class="err">Can\'t reach the local bridge.</div>Run <code>./install-autostart.sh</code> once in the Pollie project folder, then try again.');
+      });
+  };
+
+  parent.postMessage({ pluginMessage: { type: "init" } }, "*");
+  setStatus();
+  // paired users connect right away; others see onboarding (also if the main thread doesn't answer in time)
+  setTimeout(function () { if (obState === null) showOnboard(); }, 1500);
+  input.focus();
+</script>
+</body>
+</html>
