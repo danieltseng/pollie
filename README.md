@@ -1,6 +1,4 @@
-<p align="center"><img src="assets/pollie-logo.svg" width="128" alt="Pollie logo"></p>
-
-<h1 align="center">Pollie</h1>
+<p align="center"><img src="assets/pollie-social.png" alt="Pollie — Run your agent in Figma" width="100%"></p>
 
 **Run your own Claude Code or Codex agent inside Figma.**
 
