@@ -40,6 +40,7 @@ Small, obvious edits (change a text, swap one variant, recolor with a known toke
 - Placement: `h.placeRight(node, refOrRefs, gap = 80)`, `h.select(nodes, zoom = true)`
 - Flows: `h.layoutRow([a, b, c] | [[a, b], [null, c]], { gapX: 200, gapY: 240 })`, `h.arrow(fromTriggerOrScreen, toScreen, "Tap Sign in", { parent, lane })` (house style: blue-violet line, circle start, corners only in the gaps between screens — keep the default color), `h.link(src, dest, { trigger: "ON_CLICK", animation: "SMART_ANIMATE" | "DISSOLVE" | "INSTANT" })`
 - Escape hatch: the full Plugin API via `figma` (see the `figma-api` skill). `h.node(ref)` resolves refs; `h.solid("#hex")` makes a paint.
+- Searching layers: use `h.find(root, n => …)` instead of `findAll`. Instance sublayers can disappear while you walk or edit (after a variant swap or component change), and reading their `name` then throws "node … does not exist"; `h.find` skips them. When editing in a loop, collect ids first and re-get each with `figma.getNodeByIdAsync(id)`, skipping nulls.
 
 When done with something visible, `await h.select(createdOrChangedNodes)` so the user sees it.
 

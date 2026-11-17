@@ -814,6 +814,14 @@ var h = (function () {
     return inst;
   }
 
+  // h.find(root, n => n.name === "Title") — findAll that skips layers Figma removes while you walk the tree
+  // (instance sublayers vanish when a variant/component changes; reading them throws "node … does not exist").
+  async function find(root, pred) {
+    root = await node(root);
+    if (!root || !("findAll" in root)) return [];
+    return root.findAll(function (n) { try { return !n.removed && !!pred(n); } catch (e) { return false; } });
+  }
+
   // ------------------------------------------------ placement & selection
   function bounds(n) { return n.absoluteBoundingBox || { x: n.x, y: n.y, width: n.width, height: n.height }; }
   // Place node to the right of ref (or of the right-most of several refs), top-aligned.
@@ -1005,7 +1013,7 @@ var h = (function () {
     node: node, variable: variable, textStyle: textStyle, paintStyle: paintStyle, effectStyle: effectStyle,
     fill: fill, stroke: stroke, num: num, text: text, setText: setText, frame: frame, append: append,
     component: component, setProps: setProps, placeRight: placeRight, select: select,
-    arrow: arrow, link: link, layoutRow: layoutRow, solid: solid,
+    arrow: arrow, link: link, layoutRow: layoutRow, solid: solid, find: find,
   };
 })();
 
@@ -1088,7 +1096,7 @@ async function runOp(op, args) {
     else roots = [figma.currentPage];
     var found = [];
     for (var q = 0; q < roots.length; q++) {
-      var list = [roots[q]].concat("findAll" in roots[q] ? roots[q].findAll(function (x) { return "annotations" in x && x.annotations && x.annotations.length > 0; }) : []);
+      var list = [roots[q]].concat("findAll" in roots[q] ? roots[q].findAll(function (x) { try { return "annotations" in x && x.annotations && x.annotations.length > 0; } catch (e) { return false; } }) : []);
       for (var w = 0; w < list.length && found.length < 300; w++) {
         var nd = list[w];
         if (!("annotations" in nd) || !nd.annotations || !nd.annotations.length) continue;
