@@ -8,9 +8,10 @@ Don't edit any files in the repo, don't ask for or handle passwords, and don't u
 - macOS only. Run `sw_vers`; stop and tell the user if this isn't a Mac.
 - `python3 --version` must work (macOS offers to install the Command Line Tools the first time — if a dialog appears, ask the user to click Install and wait).
 - `git --version` must work.
-- Claude Code: `command -v claude`. If it's missing, tell the user to install Claude Code first and stop.
-  Logged in? Run `claude -p "Reply OK" --max-turns 1` (it prints OK when signed in). If it fails, ask the user to run `claude` once in Terminal to sign in, then continue.
-- Codex is optional: if `command -v codex` works, mention that Codex models will also be available.
+- Pollie needs **at least one** of Claude Code or Codex (both is fine):
+  - Claude Code: `command -v claude`; signed in if `claude -p "Reply OK" --max-turns 1` prints OK.
+  - Codex: `command -v codex`; signed in if `codex login status` says logged in.
+  - If neither is installed and signed in, tell the user to install and sign in to one of them first, then stop.
 
 ## 2. Get the code
 - Repository: the URL the user gave you; if none, the repository this file came from (default `https://github.com/danieltseng/pollie.git`). A private repo needs the user's GitHub access (e.g. `gh auth login`).

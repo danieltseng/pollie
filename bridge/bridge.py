@@ -93,6 +93,12 @@ def load_config():
                 cfg[k] = saved[k]
         if saved.get("effort") in EFFORTS:
             cfg["effort"] = saved["effort"]
+    # either agent is enough: default to whichever one is installed
+    if not is_codex(cfg["model"]) and not have_claude() and have_codex():
+        ms = codex_models()
+        cfg["model"] = cfg.get("last_codex") if is_codex(cfg.get("last_codex")) else (ms[0]["id"] if ms else cfg["model"])
+    elif is_codex(cfg["model"]) and not have_codex() and have_claude():
+        cfg["model"] = cfg.get("last_claude") if cfg.get("last_claude") in MODELS else "opus"
     return cfg
 
 
@@ -111,6 +117,18 @@ def save_config(changes):
 
 
 CLAUDE = os.environ.get("CLAUDE_BIN") or shutil.which("claude") or os.path.expanduser("~/.local/bin/claude")
+
+
+def have_claude():
+    return bool(CLAUDE) and os.path.exists(CLAUDE)
+
+
+def have_codex():
+    return bool(CODEX) and os.path.exists(CODEX)
+
+
+CLAUDE_MODELS = [{"id": "opus", "name": "Opus 5.5"}, {"id": "sonnet", "name": "Sonnet 5.5"},
+                 {"id": "haiku", "name": "Haiku 5.5"}, {"id": "claude-fable-5-2", "name": "Fable 5.2"}]
 EXEC_TIMEOUT = 120
 MAX_RESULT_CHARS = 60000
 
@@ -2184,9 +2202,8 @@ class Handler(BaseHTTPRequestHandler):
             q = self._query_saved
             return self._json(200, memory_for((q.get("fileKey") or [None])[0], (q.get("file") or [None])[0]))
         if self.path.startswith("/models"):
-            return self._json(200, {"claude": [{"id": "opus", "name": "Opus 5.5"}, {"id": "sonnet", "name": "Sonnet 5.5"},
-                                               {"id": "haiku", "name": "Haiku 5.5"}, {"id": "claude-fable-5-2", "name": "Fable 5.2"}],
-                                    "codex": codex_models(), "config": load_config()})
+            return self._json(200, {"claude": CLAUDE_MODELS if have_claude() else [],
+                                    "codex": codex_models() if have_codex() else [], "config": load_config()})
         if self.path.startswith("/mcp"):
             return self._empty(405)  # no server-initiated stream
         self._empty(404)
@@ -2495,9 +2512,10 @@ def idle_watchdog(limit):
 
 
 def main():
-    if not CLAUDE or not os.path.exists(CLAUDE):
-        log("claude CLI not found — install Claude Code or set CLAUDE_BIN")
+    if not have_claude() and not have_codex():
+        log("Neither Claude Code nor Codex found — install one of them (or set CLAUDE_BIN / CODEX_BIN)")
         sys.exit(1)
+    log("agents: Claude Code %s, Codex %s" % ("found" if have_claude() else "not found", "found" if have_codex() else "not found"))
     threading.Thread(target=agent_reaper, args=(int(os.environ.get("FIGMA_AGENT_AGENT_IDLE", "300")),), daemon=True).start()
     fds = launchd_sockets()
     if fds:

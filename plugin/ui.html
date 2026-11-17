@@ -932,6 +932,7 @@
       if (codexLoaded) return;
       codexLoaded = true;
       AGENTS.codex.models = d.codex || [];
+      if (d.claude) AGENTS.claude.models = d.claude;  // empty when Claude Code isn't installed (Codex-only Macs)
       shownEngine = null;
       defaultCfg = d.config || null;
       applyConfig((activeTab && activeTab.s && activeTab.s.config) || lastCfg || d.config);
@@ -2045,7 +2046,7 @@
     obState = "found";
     fetch(api("/models")).then(function (r) { return r.json(); }).then(function (d) {
       var html = '<div class="ok">Connected. Agents on this Mac:</div><div class="agents">';
-      html += "<span>" + logoHtml("claude") + "Claude Code</span>";
+      html += d.claude && d.claude.length ? "<span>" + logoHtml("claude") + "Claude Code</span>" : '<span style="color:var(--fg3)">Claude Code not found</span>';
       html += d.codex && d.codex.length ? "<span>" + logoHtml("codex") + "Codex</span>" : '<span style="color:var(--fg3)">Codex not found</span>';
       $("obStatus").innerHTML = html + "</div>";
     }).catch(function () { $("obStatus").innerHTML = '<div class="ok">Connected.</div>'; });

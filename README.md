@@ -39,8 +39,7 @@ Figma (import the plugin, click Allow). Prefer doing it by hand? Follow the step
 | Item | Notes |
 |---|---|
 | macOS + Figma Desktop | The Figma web app can't run plugins in development |
-| Claude Code (required) | Install it following the official instructions, then run `claude` in Terminal once to sign in |
-| Codex CLI (optional) | Only needed for GPT models; after installing, run `codex` once to sign in |
+| Claude Code **or** Codex CLI (at least one) | Install it following the official instructions, then run `claude` (or `codex`) in Terminal once to sign in. With both installed you can switch per errand |
 | Python 3 | Comes with macOS. If you're asked to install the "Command Line Tools" the first time, click Install |
 
 ### Steps
