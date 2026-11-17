@@ -1,4 +1,6 @@
-# Pollie 🌼
+<p align="center"><img src="assets/pollie-logo.svg" width="128" alt="Pollie logo"></p>
+
+<h1 align="center">Pollie</h1>
 
 **Run your own Claude Code or Codex agent inside Figma.**
 
