@@ -1,12 +1,23 @@
 # Pollie 🌼
 
-**Pollie — run your agent in Figma**
+**Run your own Claude Code or Codex agent inside Figma.**
 
-A little sprite that lives in your Figma garden.
+Select layers, type what you want, and Pollie changes the canvas for you — using this file's components, variables and styles.
+
+- **For** designers on a Mac (Figma Desktop) who already use — or want to try — Claude Code or Codex.
+- **Does** edits, new screens, user-flow diagrams, design-system cleanup and layer renaming — right on the canvas, one Cmd+Z undoes the whole turn.
+- **Different from Figma's built-in AI**: it's *your* agent and *your* subscription, it follows *your* design system and team rules, and there's no Pollie server in between — the plugin talks to a small bridge on your own Mac, and your agent talks to its own provider as usual.
+
+<!-- Demo: add a 30–60s GIF or video here (select screens → type a request → canvas updates) -->
+
+<details>
+<summary>More about how it works</summary>
 
 Select layers in Figma and tell the Claude Code or Codex on your own computer what to do: edit designs, build new screens, connect screens into a flow, or tidy layer names to your team's rules. Changes follow the file's components, variables and styles, appear right on the canvas, and a single Cmd+Z undoes the whole turn.
 
 Everyone installs it on their own Mac and uses their own Claude / ChatGPT account. Errands (your conversations with Pollie) and personal settings stay on your computer; "This file" memory and skills are saved in the Figma file and travel with it.
+
+</details>
 
 ---
 
